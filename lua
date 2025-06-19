@@ -1,37 +1,73 @@
--- Grow A Garden - Ultra Ringan ESP + Pet Detector + Auto Buy
+-- Grow A Garden - ESP + Auto Buy + Manual Auto-Hop Toggle
 local Players = game:GetService("Players")
 local TeleportService = game:GetService("TeleportService")
 local LocalPlayer = Players.LocalPlayer
-local PlaceId = game.PlaceId
-local petTarget = "Goat" -- Ganti sesuai pet incaran kamu
-local enabled = true
+local petTarget = "Goat" -- Ganti pet incaran
+local autoHopEnabled = false
+local espEnabled = true
 local found = false
 
 -- Notifikasi
-local function notify(txt)
-	local gui = Instance.new("Hint", workspace)
-	gui.Text = "[ESP] " .. txt
-	task.delay(3, function()
-		gui:Destroy()
-	end)
+local function notify(msg)
+	local h = Instance.new("Hint", workspace)
+	h.Text = "[GrowESP] " .. msg
+	task.delay(3, function() h:Destroy() end)
 end
 
--- Auto Buy Semua Item di Shop (Egg/Seed/Gear)
+-- GUI sederhana untuk toggle Auto-Hop
+local gui = Instance.new("ScreenGui", LocalPlayer:WaitForChild("PlayerGui"))
+gui.Name = "GrowESPMenu"
+
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 240, 0, 110)
+frame.Position = UDim2.new(0, 10, 0.5, -55)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1, 0, 0, 24)
+title.Text = "🥚 Grow ESP Settings"
+title.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
+title.TextColor3 = Color3.new(1, 1, 1)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 18
+
+local petBox = Instance.new("TextBox", frame)
+petBox.Size = UDim2.new(1, -20, 0, 26)
+petBox.Position = UDim2.new(0, 10, 0, 30)
+petBox.PlaceholderText = "Pet incaran (Goat)"
+petBox.Text = petTarget
+petBox.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+petBox.TextColor3 = Color3.new(1, 1, 1)
+
+local hopToggle = Instance.new("TextButton", frame)
+hopToggle.Size = UDim2.new(1, -20, 0, 28)
+hopToggle.Position = UDim2.new(0, 10, 0, 62)
+hopToggle.Text = "Auto-Hop: OFF"
+hopToggle.BackgroundColor3 = Color3.fromRGB(120, 0, 0)
+hopToggle.TextColor3 = Color3.new(1, 1, 1)
+
+hopToggle.MouseButton1Click:Connect(function()
+	autoHopEnabled = not autoHopEnabled
+	hopToggle.Text = "Auto-Hop: " .. (autoHopEnabled and "ON" or "OFF")
+	hopToggle.BackgroundColor3 = autoHopEnabled and Color3.fromRGB(0, 120, 0) or Color3.fromRGB(120, 0, 0)
+end)
+
+-- Auto-buy semua item shop
 task.spawn(function()
 	while true do
 		task.wait(2)
-		if not enabled then continue end
 		for _, v in pairs(workspace:GetDescendants()) do
 			if v:IsA("ProximityPrompt") and v.MaxActivationDistance <= 12 then
-				pcall(function()
-					fireproximityprompt(v)
-				end)
+				pcall(function() fireproximityprompt(v) end)
 			end
 		end
 	end
 end)
 
--- Buat ESP sederhana
+-- ESP dan deteksi Egg
 local function makeESP(part, text)
 	if part:FindFirstChild("EggESP") then return end
 	local bb = Instance.new("BillboardGui", part)
@@ -46,27 +82,26 @@ local function makeESP(part, text)
 	lbl.Text = text
 	lbl.TextColor3 = Color3.new(1, 1, 0)
 	lbl.TextScaled = true
+	lbl.Font = Enum.Font.SourceSansBold
 end
 
--- Cek isi Egg & kasih ESP
 local function scanEgg()
 	found = false
+	local target = petBox.Text
 	for _, egg in pairs(workspace:GetDescendants()) do
 		if egg:IsA("Model") and egg.Name:lower():find("egg") then
-			local base = egg:FindFirstChildWhichIsA("BasePart")
-			if base and not base:FindFirstChild("EggESP") then
+			local part = egg:FindFirstChildWhichIsA("BasePart")
+			if part and not part:FindFirstChild("EggESP") then
 				local petName = "Egg"
-				for _, desc in pairs(egg:GetDescendants()) do
-					if desc:IsA("TextLabel") and desc.Text ~= "" then
-						petName = desc.Text
-						break
-					elseif desc:IsA("Model") and desc.Name:lower():find("pet") then
-						petName = desc.Name
-						break
+				for _, d in pairs(egg:GetDescendants()) do
+					if d:IsA("TextLabel") and d.Text ~= "" then
+						petName = d.Text break
+					elseif d:IsA("Model") and d.Name:lower():find("pet") then
+						petName = d.Name break
 					end
 				end
-				makeESP(base, petName)
-				if petName:lower():find(petTarget:lower()) then
+				makeESP(part, petName)
+				if petName:lower():find(target:lower()) then
 					found = true
 					notify("Pet ditemukan: " .. petName)
 				end
@@ -75,14 +110,14 @@ local function scanEgg()
 	end
 end
 
--- Loop ESP dan Auto-Hop
+-- Loop scan & auto-hop jika aktif
 task.spawn(function()
 	while task.wait(6) do
-		if not enabled then continue end
+		petTarget = petBox.Text
 		scanEgg()
-		if not found then
-			notify("Pet tidak ditemukan... server hop")
-			TeleportService:Teleport(PlaceId)
+		if not found and autoHopEnabled then
+			notify("Pet tidak ada, pindah server...")
+			TeleportService:Teleport(game.PlaceId)
 		end
 	end
 end)
