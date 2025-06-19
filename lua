@@ -1,64 +1,61 @@
+-- Buat GUI muncul dengan fungsi geser
 local Player = game.Players.LocalPlayer
 local Char = Player.Character or Player.CharacterAdded:Wait()
-local mouse = Player:GetMouse()
-local UIS = game:GetService("UserInputService")
-
--- GUI Setup
 local gui = Instance.new("ScreenGui", Player:WaitForChild("PlayerGui"))
-gui.Name = "BrainrotStealer"
+gui.Name = "Stealer"
 
+-- Frame Utama
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 200, 0, 150)
-frame.Position = UDim2.new(0.5, -100, 0.5, -75)
-frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.Size = UDim2.new(0, 220, 0, 150)
+frame.Position = UDim2.new(0.5, -110, 0.5, -75)
+frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
 frame.Active = true
 frame.Draggable = true
-
--- Toggle Button
-local toggleButton = Instance.new("TextButton", frame)
-toggleButton.Size = UDim2.new(1, 0, 0, 30)
-toggleButton.Position = UDim2.new(0, 0, 0, 0)
-toggleButton.Text = "Sembunyikan GUI"
-toggleButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-toggleButton.TextColor3 = Color3.new(1, 1, 1)
 
 -- Steal Button
 local stealBtn = Instance.new("TextButton", frame)
 stealBtn.Size = UDim2.new(1, -20, 0, 40)
-stealBtn.Position = UDim2.new(0, 10, 0, 40)
-stealBtn.Text = "🔪 Steal Brainrot"
-stealBtn.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
+stealBtn.Position = UDim2.new(0, 10, 0, 10)
+stealBtn.Text = "🧠 Curi Brainrot ke Base"
+stealBtn.BackgroundColor3 = Color3.fromRGB(200, 80, 80)
 stealBtn.TextColor3 = Color3.new(1, 1, 1)
 
--- Speed Toggle
+-- Speed Button
 local speedBtn = Instance.new("TextButton", frame)
 speedBtn.Size = UDim2.new(1, -20, 0, 40)
-speedBtn.Position = UDim2.new(0, 10, 0, 90)
+speedBtn.Position = UDim2.new(0, 10, 0, 60)
 speedBtn.Text = "🏃 Lari Cepat: OFF"
-speedBtn.BackgroundColor3 = Color3.fromRGB(50, 150, 250)
+speedBtn.BackgroundColor3 = Color3.fromRGB(80, 150, 200)
 speedBtn.TextColor3 = Color3.new(1, 1, 1)
 
--- Cooldown + Steal Function
+-- Toggle GUI Button
+local toggleBtn = Instance.new("TextButton", frame)
+toggleBtn.Size = UDim2.new(1, -20, 0, 30)
+toggleBtn.Position = UDim2.new(0, 10, 0, 110)
+toggleBtn.Text = "❌ Sembunyikan Menu"
+toggleBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
+toggleBtn.TextColor3 = Color3.new(1, 1, 1)
+
+-- Steal Function
 local cooldown = false
 stealBtn.MouseButton1Click:Connect(function()
     if cooldown then return end
     local tool = Char:FindFirstChildOfClass("Tool")
     if tool then
-        local base = workspace:FindFirstChild("Base_" .. Player.Name)
+        local base = workspace:FindFirstChild("Base_"..Player.Name)
         if base then
             tool.Parent = base
-            print("Item dicuri!")
         end
     end
     cooldown = true
     stealBtn.Text = "⏳ Cooldown..."
     task.delay(5, function()
         cooldown = false
-        stealBtn.Text = "🔪 Steal Brainrot"
+        stealBtn.Text = "🧠 Curi Brainrot ke Base"
     end)
 end)
 
--- Speed Toggle Function
+-- Speed Toggle
 local isFast = false
 speedBtn.MouseButton1Click:Connect(function()
     local hum = Char:FindFirstChildOfClass("Humanoid")
@@ -69,14 +66,14 @@ speedBtn.MouseButton1Click:Connect(function()
     end
 end)
 
--- Toggle GUI
+-- GUI Toggle
 local hidden = false
-toggleButton.MouseButton1Click:Connect(function()
+toggleBtn.MouseButton1Click:Connect(function()
     hidden = not hidden
     for _, v in ipairs(frame:GetChildren()) do
-        if v:IsA("TextButton") and v ~= toggleButton then
+        if v:IsA("TextButton") and v ~= toggleBtn then
             v.Visible = not hidden
         end
     end
-    toggleButton.Text = hidden and "Tampilkan GUI" or "Sembunyikan GUI"
+    toggleBtn.Text = hidden and "📂 Tampilkan Menu" or "❌ Sembunyikan Menu"
 end)
