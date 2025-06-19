@@ -1,151 +1,79 @@
--- Grow a Garden - Full GUI Rayfield (Shop, ESP, Pet, Utility)
--- Make sure Rayfield library is loaded before running
+--// GUI by Nazril
+local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Rayfield/main/source.lua"))()
+local Player = game.Players.LocalPlayer
+local Char = Player.Character or Player.CharacterAdded:Wait()
+local HumanoidRootPart = Char:WaitForChild("HumanoidRootPart")
 
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
-local player = game.Players.LocalPlayer
-local TeleportService = game:GetService("TeleportService")
-local petTarget = "Goat"
-local autoHop = false
-local autoBuyEgg = false
-local autoBuySeed = false
-local autoBuyGear = false
-local espEnabled = false
-local notifEnabled = true
+-- Config
+local ITEM_NAME = "Brainrot" -- item yang kamu pegang
+local COOLDOWN = 5 -- detik
+local canSteal = true
 
--- MAIN GUI
-local Window = Rayfield:CreateWindow({
-    Name = "Grow ESP GUI",
-    LoadingTitle = "Grow Garden GUI",
+-- GUI Setup
+local Window = library:CreateWindow({
+    Name = "Auto Curi Brainrot",
+    LoadingTitle = "Steal Center",
+    LoadingSubtitle = "by Nazril",
     ConfigurationSaving = {
         Enabled = true,
-        FolderName = "GrowGUI",
-        FileName = "grow_ui_config"
+        FolderName = "AutoStealConfig",
+        FileName = "Settings"
     },
+    Discord = {
+        Enabled = false
+    },
+    KeySystem = false
 })
 
--- SHOP TAB
-local ShopTab = Window:CreateTab("Shop", 4483362458)
-ShopTab:CreateToggle({
-    Name = "Auto Buy Eggs",
-    CurrentValue = false,
-    Callback = function(Value)
-        autoBuyEgg = Value
-    end,
-})
-ShopTab:CreateToggle({
-    Name = "Auto Buy Seeds",
-    CurrentValue = false,
-    Callback = function(Value)
-        autoBuySeed = Value
-    end,
-})
-ShopTab:CreateToggle({
-    Name = "Auto Buy Gears",
-    CurrentValue = false,
-    Callback = function(Value)
-        autoBuyGear = Value
-    end,
-})
+-- Main Tab
+local MainTab = Window:CreateTab("Menu", 4483362458)
+local ToggleSteal, ToggleSpeed
 
--- ESP TAB
-local ESPTab = Window:CreateTab("ESP", 4483362458)
-ESPTab:CreateToggle({
-    Name = "ESP Egg Boxes",
-    CurrentValue = false,
-    Callback = function(Value)
-        espEnabled = Value
-    end,
-})
-
--- PET TAB
-local PetTab = Window:CreateTab("Pet", 4483362458)
-PetTab:CreateInput({
-    Name = "Pet Incaran",
-    PlaceholderText = "Masukkan nama pet...",
-    RemoveTextAfterFocusLost = true,
-    Callback = function(Text)
-        petTarget = Text
-    end,
-})
-PetTab:CreateToggle({
-    Name = "Notif saat Pet ditemukan",
-    CurrentValue = true,
-    Callback = function(Value)
-        notifEnabled = Value
-    end,
-})
-
--- UTILITY TAB
-local UtilityTab = Window:CreateTab("Utility", 4483362458)
-UtilityTab:CreateToggle({
-    Name = "Auto Hop Server jika Pet tidak ditemukan",
-    CurrentValue = false,
-    Callback = function(Value)
-        autoHop = Value
-    end,
-})
-
--- FUNCTION: Notif
-local function notify(msg)
-    if notifEnabled then
-        Rayfield:Notify({Title = "Grow ESP", Content = msg, Duration = 4})
-    end
-end
-
--- FUNCTION: ESP
-local function makeESP(part, text)
-    if part:FindFirstChild("EggESP") then return end
-    local bb = Instance.new("BillboardGui", part)
-    bb.Name = "EggESP"
-    bb.Size = UDim2.new(0, 100, 0, 20)
-    bb.StudsOffset = Vector3.new(0, 2, 0)
-    bb.AlwaysOnTop = true
-    local lbl = Instance.new("TextLabel", bb)
-    lbl.Size = UDim2.new(1, 0, 1, 0)
-    lbl.BackgroundTransparency = 1
-    lbl.Text = text
-    lbl.TextColor3 = Color3.new(1, 1, 0)
-    lbl.TextScaled = true
-end
-
--- LOOP: Auto Buy
-task.spawn(function()
-    while true do task.wait(2)
-        for _, v in pairs(workspace:GetDescendants()) do
-            if v:IsA("ProximityPrompt") and v.MaxActivationDistance <= 12 then
-                local name = v.Parent and v.Parent.Name:lower()
-                if autoBuyEgg and name:find("egg") then fireproximityprompt(v) end
-                if autoBuySeed and name:find("seed") then fireproximityprompt(v) end
-                if autoBuyGear and name:find("gear") then fireproximityprompt(v) end
-            end
-        end
-    end
-end)
-
--- LOOP: ESP + Pet Scan + Auto Hop
-task.spawn(function()
-    while true do task.wait(6)
-        local found = false
-        for _, egg in pairs(workspace:GetDescendants()) do
-            if egg:IsA("Model") and egg.Name:lower():find("egg") then
-                local part = egg:FindFirstChildWhichIsA("BasePart")
-                if part and espEnabled and not part:FindFirstChild("EggESP") then
-                    local petName = "Egg"
-                    for _, d in pairs(egg:GetDescendants()) do
-                        if d:IsA("TextLabel") and d.Text ~= "" then petName = d.Text break end
-                        if d:IsA("Model") and d.Name:lower():find("pet") then petName = d.Name break end
-                    end
-                    makeESP(part, petName)
-                    if petName:lower():find(petTarget:lower()) then
-                        found = true
-                        notify("Pet ditemukan: " .. petName)
-                    end
+-- Steal Button
+MainTab:CreateButton({
+    Name = "Steal Item ke Base",
+    Callback = function()
+        if canSteal then
+            canSteal = false
+            local heldItem = Char:FindFirstChild(ITEM_NAME) or Char:FindFirstChildOfClass("Tool")
+            if heldItem then
+                local base = workspace:FindFirstChild("Base_" .. Player.Name)
+                if base then
+                    heldItem.Parent = base
+                    print("Item berhasil dicuri ke base!")
+                else
+                    warn("Base kamu tidak ditemukan!")
                 end
+            else
+                warn("Kamu tidak sedang memegang item!")
             end
-        end
-        if not found and autoHop then
-            notify("Pet tidak ditemukan, server hop...")
-            TeleportService:Teleport(game.PlaceId)
+            task.delay(COOLDOWN, function()
+                canSteal = true
+            end)
+        else
+            warn("Tunggu cooldown...")
         end
     end
-end)
+})
+
+-- Speed Toggle
+MainTab:CreateToggle({
+    Name = "Lari Cepat",
+    CurrentValue = false,
+    Callback = function(state)
+        local humanoid = Char:FindFirstChildOfClass("Humanoid")
+        if humanoid then
+            humanoid.WalkSpeed = state and 60 or 16
+        end
+    end
+})
+
+-- GUI Toggle
+MainTab:CreateKeybind({
+    Name = "Toggle GUI",
+    CurrentKeybind = "RightControl",
+    HoldToInteract = false,
+    Callback = function()
+        library:ToggleUI()
+    end,
+})
