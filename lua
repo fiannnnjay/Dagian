@@ -8,7 +8,7 @@ local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 gui.Name = "ItemSpawnerUI"
 gui.ResetOnSpawn = false
 
--- Frame Utama
+-- Frame utama
 local frame = Instance.new("Frame", gui)
 frame.Size = UDim2.new(0, 300, 0, 200)
 frame.Position = UDim2.new(0.5, -150, 0.5, -100)
@@ -27,7 +27,7 @@ toggleButton.TextColor3 = Color3.new(1, 1, 1)
 
 -- Tombol Spawn
 local spawnBtn = Instance.new("TextButton", frame)
-spawnBtn.Text = "Spawn Dari Tangan"
+spawnBtn.Text = "Tambah ke Tas"
 spawnBtn.Size = UDim2.new(1, -20, 0, 40)
 spawnBtn.Position = UDim2.new(0, 10, 0, 80)
 spawnBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
@@ -35,7 +35,7 @@ spawnBtn.TextColor3 = Color3.new(1, 1, 1)
 spawnBtn.AutoButtonColor = true
 spawnBtn.Active = false
 
--- Label status item
+-- Label status tool
 local info = Instance.new("TextLabel", frame)
 info.Size = UDim2.new(1, -20, 0, 30)
 info.Position = UDim2.new(0, 10, 0, 20)
@@ -44,7 +44,7 @@ info.TextColor3 = Color3.new(1, 1, 1)
 info.TextScaled = true
 info.Text = "Tidak Ada Item Di Tangan"
 
--- Toggle buka/tutup
+-- Toggle panel buka/tutup
 local isOpen = true
 toggleButton.MouseButton1Click:Connect(function()
 	isOpen = not isOpen
@@ -52,7 +52,7 @@ toggleButton.MouseButton1Click:Connect(function()
 	toggleButton.Text = isOpen and "Tutup Panel" or "Buka Panel"
 end)
 
--- Cek apakah sedang memegang item
+-- Cek tool di tangan
 local function checkTool()
 	local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
 	if tool then
@@ -68,15 +68,13 @@ end
 
 game:GetService("RunService").RenderStepped:Connect(checkTool)
 
--- Fungsi untuk spawn copy dari tool
+-- Tambahkan ke tas (Backpack)
 spawnBtn.MouseButton1Click:Connect(function()
 	if not spawnBtn.Active then return end
 
-	local tool = player.Character:FindFirstChildOfClass("Tool")
+	local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
 	if not tool then return end
 
-	-- Duplikat tool sebagai objek di workspace
 	local clone = tool:Clone()
-	clone.Parent = workspace
-	clone.Handle.CFrame = player.Character.HumanoidRootPart.CFrame * CFrame.new(0, 5, 0)
+	clone.Parent = player.Backpack -- langsung masuk tas
 end)
