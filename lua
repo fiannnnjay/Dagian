@@ -1,7 +1,21 @@
--- ✅ Delta FPS Aimbot PRO - FULL PRO VERSION with Rayfield UI
--- Features: Smooth Aimbot, Colorful ESP, Line ESP, Silent Aim, Magic Bullet, Hold-to-Lock
+-- ✅ Delta FPS Aimbot PRO - Rayfield GUI FIXED VERSION (Full Code)
+-- GUI Fixed + Safe Delay + ESP + Line + Silent Aim + Magic Bullet + Anti Kick + Prediction
 
-local Rayfield = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Rayfield/main/source.lua"))()
+repeat wait() until game:IsLoaded()
+wait(2)
+
+local success, Rayfield = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Rayfield/main/source.lua"))()
+end)
+
+if not success then
+    warn("[⚠️] Gagal memuat Rayfield GUI dari GitHub. Coba aktifkan VPN atau ganti koneksi!")
+    game:GetService("StarterGui"):SetCore("SendNotification", {
+        Title = "Rayfield Gagal", Text = "Cek koneksi atau VPN", Duration = 8
+    })
+    return
+end
+
 local Players = game:GetService("Players")
 local lp = Players.LocalPlayer
 local cam = workspace.CurrentCamera
@@ -14,9 +28,8 @@ local aimPart = "Head"
 local maxDistance = 300
 local projectileSpeed = 160
 local aimKey = Enum.KeyCode.Q
-local teamColorESP = false
-
 local currentTool = nil
+
 local espFolder = Instance.new("Folder", game.CoreGui)
 espFolder.Name = "RayESP"
 
@@ -26,18 +39,16 @@ pcall(function()
     setreadonly(mt, false)
     local old = mt.__namecall
     mt.__namecall = newcclosure(function(self, ...)
-        if getnamecallmethod() == "Kick" then
-            return warn("[ANTI KICK] Blocked")
-        end
+        if getnamecallmethod() == "Kick" then return warn("[ANTI KICK] Blocked") end
         return old(self, ...)
     end)
 end)
 
--- Rayfield GUI Setup
+-- GUI Setup
 local Window = Rayfield:CreateWindow({
     Name = "🎯 Delta FPS Aimbot Pro",
-    LoadingTitle = "Injecting FPS Pro...",
-    LoadingSubtitle = "By ChatGPT",
+    LoadingTitle = "Rayfield Loaded",
+    LoadingSubtitle = "FPS Menu Ready",
     ConfigurationSaving = { Enabled = false },
     Discord = { Enabled = false },
     KeySystem = false
@@ -46,13 +57,13 @@ local Window = Rayfield:CreateWindow({
 local MainTab = Window:CreateTab("Main", 4483362458)
 
 MainTab:CreateToggle({ Name = "Aimbot (Smooth)", CurrentValue = false, Callback = function(v) aiming = v end })
-MainTab:CreateToggle({ Name = "ESP Player Colorful", CurrentValue = false, Callback = function(v) espEnabled = v for _,x in pairs(espFolder:GetChildren()) do x:Destroy() end end })
+MainTab:CreateToggle({ Name = "ESP Colorful", CurrentValue = false, Callback = function(v) espEnabled = v for _,x in pairs(espFolder:GetChildren()) do x:Destroy() end end })
 MainTab:CreateToggle({ Name = "No Recoil", CurrentValue = false, Callback = function(v) noRecoil = v end })
 MainTab:CreateToggle({ Name = "Auto Trigger", CurrentValue = false, Callback = function(v) autoTrigger = v end })
 MainTab:CreateToggle({ Name = "Silent Aim", CurrentValue = false, Callback = function(v) silentAim = v end })
 MainTab:CreateToggle({ Name = "Hold-to-Lock (Q)", CurrentValue = false, Callback = function(v) holdToLock = v end })
-MainTab:CreateToggle({ Name = "Magic Bullet Mode", CurrentValue = true, Callback = function(v) magicBullet = v end })
-MainTab:CreateButton({ Name = "Switch Aim Part", Callback = function() aimPart = aimPart == "Head" and "HumanoidRootPart" or "Head" Rayfield:Notify({ Title = "Aim Part", Content = "Now aiming at: "..aimPart }) end })
+MainTab:CreateToggle({ Name = "Magic Bullet", CurrentValue = true, Callback = function(v) magicBullet = v end })
+MainTab:CreateButton({ Name = "Switch AimPart", Callback = function() aimPart = aimPart == "Head" and "HumanoidRootPart" or "Head" Rayfield:Notify({ Title = "Aim Target", Content = "Now aiming at: "..aimPart }) end })
 
 -- ESP Drawing
 local function drawESP(player)
@@ -91,7 +102,7 @@ local function drawESP(player)
     end)
 end
 
--- Get Closest Player
+-- Get Closest
 local function getClosest()
     local closest, shortest = nil, maxDistance
     for _,v in pairs(Players:GetPlayers()) do
@@ -166,7 +177,7 @@ run.RenderStepped:Connect(function()
     end
 end)
 
--- Main Aimbot Loop
+-- Aimbot Main
 run.RenderStepped:Connect(function()
     if noRecoil then disableRecoil() end
 
@@ -185,4 +196,4 @@ run.RenderStepped:Connect(function()
     if autoTrigger then triggerFire() end
 end)
 
-Rayfield:Notify({ Title = "✅ Loaded", Content = "FPS Aimbot Pro FULL is Ready!" })
+Rayfield:Notify({ Title = "✅ GUI OK", Content = "FPS Aimbot PRO GUI muncul dengan aman!" })
