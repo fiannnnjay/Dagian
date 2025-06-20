@@ -1,177 +1,229 @@
--- FPS HACK KHUSUS ROBLOX UNTUK DELTA
--- [F4] TOGGLE MENU | [RMB] AIMBOT
+repeat wait() until game:IsLoaded()
 
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui")
+local lp = Players.LocalPlayer
+local cam = workspace.CurrentCamera
+local mouse = lp:GetMouse()
+local run = game:GetService("RunService")
+local uis = game:GetService("UserInputService")
 
--- PLAYER
-local player = Players.LocalPlayer
-local mouse = player:GetMouse()
-local camera = workspace.CurrentCamera
+local aiming = false
+local espEnabled = false
+local noRecoil = false
+local autoTrigger = false
+local silentAim = false
+local magicBullet = false
+local aimPart = "Head"
+local maxDistance = 360
+local projectileSpeed = 196
 
--- SETTINGS
-local settings = {
-    Aimbot = false,
-    AimbotKey = Enum.UserInputType.MouseButton2,
-    TargetPart = "Head",
-    FOV = 200,
-    ESP = false,
-    BoxColor = Color3.new(1,0,0),
-    TeamCheck = true
-}
+local espFolder = Instance.new("Folder", game.CoreGui)
+espFolder.Name = "SimpleESP"
 
--- CREATE GUI
-local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "RobloxFPSHack"
-ScreenGui.Parent = CoreGui
+-- Anti Kick
+pcall(function()
+    local mt = getrawmetatable(game)
+    setreadonly(mt, false)
+    local old = mt.__namecall
+    mt.__namecall = newcclosure(function(self, ...)
+        if getnamecallmethod() == "Kick" then return warn("[ANTI KICK] Blocked") end
+        return old(self, ...)
+    end)
+end)
 
-local MainFrame = Instance.new("Frame")
-MainFrame.Size = UDim2.new(0, 300, 0, 250)
-MainFrame.Position = UDim2.new(0.5, -150, 0.5, -125)
-MainFrame.BackgroundColor3 = Color3.fromRGB(25,25,35)
-MainFrame.Visible = false
-MainFrame.Parent = ScreenGui
+-- GUI
+local gui = Instance.new("ScreenGui", game.CoreGui)
+gui.Name = "SimpleFPSGui"
 
--- TITLE
-local Title = Instance.new("TextLabel")
-Title.Text = "ROBLOX FPS HACK DELTA"
-Title.Size = UDim2.new(1,0,0,30)
-Title.BackgroundColor3 = Color3.fromRGB(15,15,25)
-Title.TextColor3 = Color3.new(1,1,1)
-Title.Font = Enum.Font.GothamBold
-Title.Parent = MainFrame
+local main = Instance.new("Frame", gui)
+main.Position = UDim2.new(0.02, 0, 0.2, 0)
+main.Size = UDim2.new(0, 230, 0, 340)
+main.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
+main.Active = true
+main.Draggable = true
 
--- BUTTONS
-local AimbotBtn = Instance.new("TextButton")
-AimbotBtn.Text = "AIMBOT: OFF"
-AimbotBtn.Size = UDim2.new(0.9,0,0,30)
-AimbotBtn.Position = UDim2.new(0.05,0,0,40)
-AimbotBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
-AimbotBtn.TextColor3 = Color3.new(1,1,1)
-AimbotBtn.Font = Enum.Font.Gotham
-AimbotBtn.Parent = MainFrame
+local title = Instance.new("TextLabel", main)
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Text = "🎯 FPS Aimbot GUI"
+title.TextColor3 = Color3.new(1, 1, 1)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 18
 
-local TargetBtn = Instance.new("TextButton")
-TargetBtn.Text = "TARGET: HEAD"
-TargetBtn.Size = UDim2.new(0.9,0,0,30)
-TargetBtn.Position = UDim2.new(0.05,0,0,80)
-TargetBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
-TargetBtn.TextColor3 = Color3.new(1,1,1)
-TargetBtn.Font = Enum.Font.Gotham
-TargetBtn.Parent = MainFrame
-
-local ESPBtn = Instance.new("TextButton")
-ESPBtn.Text = "ESP: OFF"
-ESPBtn.Size = UDim2.new(0.9,0,0,30)
-ESPBtn.Position = UDim2.new(0.05,0,0,120)
-ESPBtn.BackgroundColor3 = Color3.fromRGB(40,40,50)
-ESPBtn.TextColor3 = Color3.new(1,1,1)
-ESPBtn.Font = Enum.Font.Gotham
-ESPBtn.Parent = MainFrame
-
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Text = "CLOSE"
-CloseBtn.Size = UDim2.new(0.9,0,0,30)
-CloseBtn.Position = UDim2.new(0.05,0,0,200)
-CloseBtn.BackgroundColor3 = Color3.fromRGB(255,50,50)
-CloseBtn.TextColor3 = Color3.new(1,1,1)
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.Parent = MainFrame
-
--- FUNCTIONS
-local function IsEnemy(player)
-    if not settings.TeamCheck then return true end
-    return player.Team ~= Players.LocalPlayer.Team
+local y = 35
+local function addBtn(name, varName)
+    local btn = Instance.new("TextButton", main)
+    btn.Size = UDim2.new(1, -20, 0, 30)
+    btn.Position = UDim2.new(0, 10, 0, y)
+    btn.Text = name .. ": OFF"
+    btn.Name = name
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+    btn.Font = Enum.Font.SourceSansBold
+    btn.TextSize = 14
+    btn.MouseButton1Click:Connect(function()
+        _G[varName] = not _G[varName]
+        _G[name] = _G[varName]
+        btn.Text = name .. (_G[varName] and ": ON" or ": OFF")
+    end)
+    y = y + 35
+    return btn
 end
 
-local function GetClosestPlayer()
-    local closest, closestDist = nil, settings.FOV
-    
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= player and p.Character and IsEnemy(p) then
-            local part = p.Character:FindFirstChild(settings.TargetPart)
-            if part then
-                local pos, onScreen = camera:WorldToViewportPoint(part.Position)
-                if onScreen then
-                    local dist = (Vector2.new(mouse.X,mouse.Y) - Vector2.new(pos.X,pos.Y)).Magnitude
-                    if dist < closestDist then
-                        closest = p
-                        closestDist = dist
-                    end
+addBtn("Aimbot", "aiming")
+addBtn("ESP", "espEnabled")
+addBtn("NoRecoil", "noRecoil")
+addBtn("AutoTrigger", "autoTrigger")
+addBtn("SilentAim", "silentAim")
+addBtn("MagicBullet", "magicBullet")
+
+-- Target Part Toggle
+local partBtn = Instance.new("TextButton", main)
+partBtn.Size = UDim2.new(1, -20, 0, 30)
+partBtn.Position = UDim2.new(0, 10, 0, y)
+partBtn.Text = "Target: Head"
+partBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+partBtn.TextColor3 = Color3.new(1,1,1)
+partBtn.Font = Enum.Font.SourceSansBold
+partBtn.TextSize = 14
+partBtn.MouseButton1Click:Connect(function()
+    aimPart = (aimPart == "Head") and "HumanoidRootPart" or "Head"
+    partBtn.Text = "Target: " .. aimPart
+end)
+
+-- Toggle GUI button
+local toggleBtn = Instance.new("TextButton", gui)
+toggleBtn.Text = "⚙️"
+toggleBtn.Size = UDim2.new(0, 40, 0, 40)
+toggleBtn.Position = UDim2.new(0, 10, 0, 10)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+toggleBtn.TextColor3 = Color3.new(1,1,1)
+toggleBtn.Font = Enum.Font.SourceSansBold
+toggleBtn.TextSize = 22
+toggleBtn.MouseButton1Click:Connect(function()
+    main.Visible = not main.Visible
+end)
+
+-- Targeting
+local function getClosest()
+    local closest, shortest = nil, maxDistance
+    for _,v in pairs(Players:GetPlayers()) do
+        if v ~= lp and v.Character and v.Character:FindFirstChild(aimPart) then
+            local part = v.Character[aimPart]
+            local pos, onScreen = cam:WorldToViewportPoint(part.Position)
+            if onScreen then
+                local mag = (Vector2.new(pos.X, pos.Y) - Vector2.new(mouse.X, mouse.Y)).Magnitude
+                if mag < shortest then
+                    shortest = mag
+                    closest = v
                 end
             end
         end
     end
-    
     return closest
 end
 
--- AIMBOT
-RunService.RenderStepped:Connect(function()
-    if settings.Aimbot and UserInputService:IsMouseButtonPressed(settings.AimbotKey) then
-        local target = GetClosestPlayer()
-        if target and target.Character then
-            local part = target.Character:FindFirstChild(settings.TargetPart)
-            if part then
-                camera.CFrame = CFrame.new(camera.CFrame.Position, part.Position)
-            end
-        end
-    end
-end)
+-- Prediction
+local function predictPos(target)
+    local part = target.Character and target.Character:FindFirstChild(aimPart)
+    if not part then return nil end
+    local dist = (part.Position - cam.CFrame.Position).Magnitude
+    local travel = dist / projectileSpeed
+    local vel = target.Character:FindFirstChild("HumanoidRootPart") and target.Character.HumanoidRootPart.Velocity or Vector3.zero
+    return part.Position + vel * travel
+end
 
--- ESP
-local function UpdateESP()
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= player and p.Character then
-            -- Remove old ESP
-            for _, child in pairs(p.Character:GetChildren()) do
-                if child:IsA("Highlight") then
-                    child:Destroy()
-                end
-            end
-            
-            -- Add new ESP
-            if settings.ESP and IsEnemy(p) then
-                local highlight = Instance.new("Highlight")
-                highlight.Adornee = p.Character
-                highlight.FillColor = settings.BoxColor
-                highlight.OutlineColor = Color3.new(1,1,1)
-                highlight.Parent = p.Character
+-- Disable Recoil
+local function disableRecoil()
+    for _, tool in pairs(lp.Character:GetChildren()) do
+        if tool:IsA("Tool") then
+            for _, obj in pairs(tool:GetDescendants()) do
+                if obj:IsA("Script") or obj:IsA("LocalScript") then obj.Disabled = true end
             end
         end
     end
 end
 
--- TOGGLE GUI
-mouse.KeyDown:Connect(function(key)
-    if key == "f4" then
-        MainFrame.Visible = not MainFrame.Visible
+-- Auto Trigger
+local function triggerFire()
+    local t = getClosest()
+    if t and t.Character and t.Character:FindFirstChild("Humanoid") then
+        if t.Character.Humanoid.Health > 0 then mouse1click() end
+    end
+end
+
+-- Silent Aim / Magic Bullet
+local mt = getrawmetatable(game)
+setreadonly(mt, false)
+local old = mt.__index
+mt.__index = newcclosure(function(t, k)
+    if tostring(k) == "Hit" and _G["silentAim"] then
+        local target = getClosest()
+        if target and target.Character and target.Character:FindFirstChild(aimPart) then
+            return _G["magicBullet"] and target.Character[aimPart] or old(t, k)
+        end
+    end
+    return old(t, k)
+end)
+
+-- ESP
+local function drawESP(player)
+    local box = Drawing.new("Square")
+    local text = Drawing.new("Text")
+    local line = Drawing.new("Line")
+    box.Thickness = 2 box.Filled = false box.Color = Color3.fromHSV(math.random(),1,1)
+    text.Size = 14 text.Center = true text.Outline = true text.Color = Color3.new(1,1,1)
+    line.Thickness = 1 line.Color = box.Color
+    run.RenderStepped:Connect(function()
+        if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and _G["espEnabled"] then
+            local hrp = player.Character.HumanoidRootPart
+            local pos, onScreen = cam:WorldToViewportPoint(hrp.Position)
+            if onScreen then
+                local dist = (hrp.Position - cam.CFrame.Position).Magnitude
+                local scale = 1 / dist * 100
+                local size = Vector2.new(4,6) * scale * 10
+                box.Size = size
+                box.Position = Vector2.new(pos.X - size.X/2, pos.Y - size.Y/2)
+                box.Visible = true
+                text.Text = player.Name .. string.format(" [%.0fm]", dist / 3.5)
+                text.Position = Vector2.new(pos.X, pos.Y - size.Y/2 - 14)
+                text.Visible = true
+                line.From = Vector2.new(cam.ViewportSize.X/2, cam.ViewportSize.Y)
+                line.To = Vector2.new(pos.X, pos.Y)
+                line.Visible = true
+            else
+                box.Visible = false text.Visible = false line.Visible = false
+            end
+        else
+            box.Visible = false text.Visible = false line.Visible = false
+        end
+    end)
+end
+
+run.RenderStepped:Connect(function()
+    if _G["espEnabled"] then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= lp and not espFolder:FindFirstChild(p.Name) then
+                local tag = Instance.new("BoolValue", espFolder)
+                tag.Name = p.Name
+                drawESP(p)
+            end
+        end
     end
 end)
 
--- BUTTON ACTIONS
-AimbotBtn.MouseButton1Click:Connect(function()
-    settings.Aimbot = not settings.Aimbot
-    AimbotBtn.Text = settings.Aimbot and "AIMBOT: ON" or "AIMBOT: OFF"
-    AimbotBtn.BackgroundColor3 = settings.Aimbot and Color3.new(0,1,0) or Color3.fromRGB(40,40,50)
+run.RenderStepped:Connect(function()
+    if _G["noRecoil"] then disableRecoil() end
+    if _G["aiming"] then
+        local t = getClosest()
+        if t and t.Character and t.Character:FindFirstChild(aimPart) then
+            local pos = predictPos(t)
+            if pos and not _G["silentAim"] then
+                cam.CFrame = cam.CFrame:Lerp(CFrame.new(cam.CFrame.Position, pos), 0.2)
+            end
+        end
+    end
+    if _G["autoTrigger"] then triggerFire() end
 end)
 
-TargetBtn.MouseButton1Click:Connect(function()
-    settings.TargetPart = settings.TargetPart == "Head" and "HumanoidRootPart" or "Head"
-    TargetBtn.Text = "TARGET: "..settings.TargetPart:upper()
-end)
-
-ESPBtn.MouseButton1Click:Connect(function()
-    settings.ESP = not settings.ESP
-    ESPBtn.Text = settings.ESP and "ESP: ON" or "ESP: OFF"
-    ESPBtn.BackgroundColor3 = settings.ESP and Color3.new(0,1,0) or Color3.fromRGB(40,40,50)
-    UpdateESP()
-end)
-
-CloseBtn.MouseButton1Click:Connect(function()
-    MainFrame.Visible = false
-end)
-
-warn("ROBLOX FPS HACK LOADED! PRESS F4 TO TOGGLE MENU")
+warn("✅ FPS Aimbot GUI Loaded! Semua fitur OFF default, nyalakan dari tombol.")
