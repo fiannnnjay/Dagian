@@ -1,28 +1,21 @@
--- Universal FPS Script for Delta Executor
--- Press F4 to toggle GUI
+-- UNIVERSAL FPS SCRIPT FOR DELTA EXECUTOR
+-- PRESS F4 TO TOGGLE MENU
 
--- Fix for Delta compatibility
-if not getgenv then
-    getgenv = function() return _G end
-end
-
--- Services
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 
--- Player
+-- PLAYER
 local player = Players.LocalPlayer
 local mouse = player:GetMouse()
 local camera = workspace.CurrentCamera
 
--- Settings
-getgenv().settings = {
+-- SETTINGS
+local settings = {
     Aimbot = false,
     AimbotKey = Enum.UserInputType.MouseButton2,
     TargetPart = "Head",
-    Smoothness = 0.5,
     FOV = 100,
     ESP = false,
     NoRecoil = false,
@@ -30,9 +23,9 @@ getgenv().settings = {
     BoxESP = false
 }
 
--- GUI
+-- CREATE GUI
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "DeltaFPSGui"
+ScreenGui.Name = "DeltaFPSHack"
 ScreenGui.Parent = CoreGui
 
 local MainFrame = Instance.new("Frame")
@@ -42,90 +35,50 @@ MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
 MainFrame.Visible = false
 MainFrame.Parent = ScreenGui
 
--- Title
+-- TITLE
 local Title = Instance.new("TextLabel")
-Title.Text = "DELTA FPS TOOLS"
+Title.Text = "DELTA FPS HACK"
 Title.Size = UDim2.new(1, 0, 0, 30)
 Title.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
-Title.TextColor3 = Color3.fromRGB(255, 255, 255)
+Title.TextColor3 = Color3.new(1, 1, 1)
 Title.Font = Enum.Font.GothamBold
 Title.Parent = MainFrame
 
--- Aimbot Toggle
-local AimbotBtn = Instance.new("TextButton")
-AimbotBtn.Text = "AIMBOT: OFF"
-AimbotBtn.Size = UDim2.new(0.9, 0, 0, 25)
-AimbotBtn.Position = UDim2.new(0.05, 0, 0, 40)
-AimbotBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-AimbotBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-AimbotBtn.Font = Enum.Font.Gotham
-AimbotBtn.Parent = MainFrame
+-- BUTTONS
+local function CreateButton(name, ypos)
+    local btn = Instance.new("TextButton")
+    btn.Text = name
+    btn.Size = UDim2.new(0.9, 0, 0, 25)
+    btn.Position = UDim2.new(0.05, 0, 0, ypos)
+    btn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
+    btn.TextColor3 = Color3.new(1, 1, 1)
+    btn.Font = Enum.Font.Gotham
+    btn.Parent = MainFrame
+    return btn
+end
 
--- Target Selection
-local TargetBtn = Instance.new("TextButton")
-TargetBtn.Text = "TARGET: HEAD"
-TargetBtn.Size = UDim2.new(0.9, 0, 0, 25)
-TargetBtn.Position = UDim2.new(0.05, 0, 0, 70)
-TargetBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-TargetBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-TargetBtn.Font = Enum.Font.Gotham
-TargetBtn.Parent = MainFrame
-
--- ESP Toggle
-local ESPBtn = Instance.new("TextButton")
-ESPBtn.Text = "ESP: OFF"
-ESPBtn.Size = UDim2.new(0.9, 0, 0, 25)
-ESPBtn.Position = UDim2.new(0.05, 0, 0, 100)
-ESPBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-ESPBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-ESPBtn.Font = Enum.Font.Gotham
-ESPBtn.Parent = MainFrame
-
--- No Recoil
-local NoRecoilBtn = Instance.new("TextButton")
-NoRecoilBtn.Text = "NO RECOIL: OFF"
-NoRecoilBtn.Size = UDim2.new(0.9, 0, 0, 25)
-NoRecoilBtn.Position = UDim2.new(0.05, 0, 0, 130)
-NoRecoilBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-NoRecoilBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-NoRecoilBtn.Font = Enum.Font.Gotham
-NoRecoilBtn.Parent = MainFrame
-
--- No Spread
-local NoSpreadBtn = Instance.new("TextButton")
-NoSpreadBtn.Text = "NO SPREAD: OFF"
-NoSpreadBtn.Size = UDim2.new(0.9, 0, 0, 25)
-NoSpreadBtn.Position = UDim2.new(0.05, 0, 0, 160)
-NoSpreadBtn.BackgroundColor3 = Color3.fromRGB(40, 40, 50)
-NoSpreadBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-NoSpreadBtn.Font = Enum.Font.Gotham
-NoSpreadBtn.Parent = MainFrame
-
--- Close Button
-local CloseBtn = Instance.new("TextButton")
-CloseBtn.Text = "CLOSE"
-CloseBtn.Size = UDim2.new(0.9, 0, 0, 25)
-CloseBtn.Position = UDim2.new(0.05, 0, 0, 190)
+local AimbotBtn = CreateButton("AIMBOT: OFF", 40)
+local TargetBtn = CreateButton("TARGET: HEAD", 70)
+local ESPBtn = CreateButton("ESP: OFF", 100)
+local NoRecoilBtn = CreateButton("NO RECOIL: OFF", 130)
+local NoSpreadBtn = CreateButton("NO SPREAD: OFF", 160)
+local CloseBtn = CreateButton("CLOSE", 190)
 CloseBtn.BackgroundColor3 = Color3.fromRGB(255, 60, 60)
-CloseBtn.TextColor3 = Color3.fromRGB(255, 255, 255)
-CloseBtn.Font = Enum.Font.GothamBold
-CloseBtn.Parent = MainFrame
 
--- Functions
+-- FUNCTIONS
 local function GetClosestPlayer()
-    local closest = nil
-    local minDist = getgenv().settings.FOV
+    local closest, closestDist = nil, settings.FOV
     
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= Players.LocalPlayer and player.Character then
-            local part = player.Character:FindFirstChild(getgenv().settings.TargetPart)
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= player and p.Character then
+            local part = p.Character:FindFirstChild(settings.TargetPart)
             if part then
                 local pos, onScreen = camera:WorldToViewportPoint(part.Position)
                 if onScreen then
                     local dist = (Vector2.new(mouse.X, mouse.Y) - Vector2.new(pos.X, pos.Y)).Magnitude
-                    if dist < minDist then
-                        closest = player
-                        minDist = dist
+                    if dist < closestDist then
+                        closest = p
+                        closestDist = dist
                     end
                 end
             end
@@ -135,65 +88,83 @@ local function GetClosestPlayer()
     return closest
 end
 
--- Aimbot Logic
+-- AIMBOT
 RunService.RenderStepped:Connect(function()
-    if getgenv().settings.Aimbot and UserInputService:IsMouseButtonPressed(getgenv().settings.AimbotKey) then
+    if settings.Aimbot and UserInputService:IsMouseButtonPressed(settings.AimbotKey) then
         local target = GetClosestPlayer()
         if target and target.Character then
-            local part = target.Character:FindFirstChild(getgenv().settings.TargetPart)
+            local part = target.Character:FindFirstChild(settings.TargetPart)
             if part then
-                local camPos = camera.CFrame.Position
-                local targetPos = part.Position
-                local direction = (targetPos - camPos).Unit
-                
-                local currentLook = camera.CFrame.LookVector
-                local newLook = currentLook:Lerp(direction, 1 - getgenv().settings.Smoothness)
-                
-                camera.CFrame = CFrame.new(camPos, camPos + newLook)
+                camera.CFrame = CFrame.new(camera.CFrame.Position, part.Position)
             end
         end
     end
 end)
 
--- Toggle GUI
+-- ESP
+local function UpdateESP()
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= player and p.Character then
+            -- Remove existing ESP
+            for _, v in pairs(p.Character:GetChildren()) do
+                if v:IsA("Highlight") or v.Name == "ESPBox" then
+                    v:Destroy()
+                end
+            end
+            
+            -- Add new ESP
+            if settings.ESP then
+                local highlight = Instance.new("Highlight")
+                highlight.Name = "ESPBox"
+                highlight.Adornee = p.Character
+                highlight.FillColor = Color3.new(1, 0, 0)
+                highlight.OutlineColor = Color3.new(1, 1, 1)
+                highlight.Parent = p.Character
+            end
+        end
+    end
+end
+
+-- TOGGLE GUI
 mouse.KeyDown:Connect(function(key)
     if key == "f4" then
         MainFrame.Visible = not MainFrame.Visible
     end
 end)
 
--- Button Functions
+-- BUTTON ACTIONS
 AimbotBtn.MouseButton1Click:Connect(function()
-    getgenv().settings.Aimbot = not getgenv().settings.Aimbot
-    AimbotBtn.Text = getgenv().settings.Aimbot and "AIMBOT: ON" or "AIMBOT: OFF"
-    AimbotBtn.BackgroundColor3 = getgenv().settings.Aimbot and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(40, 40, 50)
+    settings.Aimbot = not settings.Aimbot
+    AimbotBtn.Text = settings.Aimbot and "AIMBOT: ON" or "AIMBOT: OFF"
+    AimbotBtn.BackgroundColor3 = settings.Aimbot and Color3.new(0, 0.5, 1) or Color3.fromRGB(40, 40, 50)
 end)
 
 TargetBtn.MouseButton1Click:Connect(function()
-    getgenv().settings.TargetPart = getgenv().settings.TargetPart == "Head" and "HumanoidRootPart" or "Head"
-    TargetBtn.Text = "TARGET: " .. getgenv().settings.TargetPart:upper()
+    settings.TargetPart = settings.TargetPart == "Head" and "HumanoidRootPart" or "Head"
+    TargetBtn.Text = "TARGET: " .. settings.TargetPart:upper()
 end)
 
 ESPBtn.MouseButton1Click:Connect(function()
-    getgenv().settings.ESP = not getgenv().settings.ESP
-    ESPBtn.Text = getgenv().settings.ESP and "ESP: ON" or "ESP: OFF"
-    ESPBtn.BackgroundColor3 = getgenv().settings.ESP and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(40, 40, 50)
+    settings.ESP = not settings.ESP
+    ESPBtn.Text = settings.ESP and "ESP: ON" or "ESP: OFF"
+    ESPBtn.BackgroundColor3 = settings.ESP and Color3.new(0, 0.5, 1) or Color3.fromRGB(40, 40, 50)
+    UpdateESP()
 end)
 
 NoRecoilBtn.MouseButton1Click:Connect(function()
-    getgenv().settings.NoRecoil = not getgenv().settings.NoRecoil
-    NoRecoilBtn.Text = getgenv().settings.NoRecoil and "NO RECOIL: ON" or "NO RECOIL: OFF"
-    NoRecoilBtn.BackgroundColor3 = getgenv().settings.NoRecoil and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(40, 40, 50)
+    settings.NoRecoil = not settings.NoRecoil
+    NoRecoilBtn.Text = settings.NoRecoil and "NO RECOIL: ON" or "NO RECOIL: OFF"
+    NoRecoilBtn.BackgroundColor3 = settings.NoRecoil and Color3.new(0, 0.5, 1) or Color3.fromRGB(40, 40, 50)
 end)
 
 NoSpreadBtn.MouseButton1Click:Connect(function()
-    getgenv().settings.NoSpread = not getgenv().settings.NoSpread
-    NoSpreadBtn.Text = getgenv().settings.NoSpread and "NO SPREAD: ON" or "NO SPREAD: OFF"
-    NoSpreadBtn.BackgroundColor3 = getgenv().settings.NoSpread and Color3.fromRGB(0, 150, 255) or Color3.fromRGB(40, 40, 50)
+    settings.NoSpread = not settings.NoSpread
+    NoSpreadBtn.Text = settings.NoSpread and "NO SPREAD: ON" or "NO SPREAD: OFF"
+    NoSpreadBtn.BackgroundColor3 = settings.NoSpread and Color3.new(0, 0.5, 1) or Color3.fromRGB(40, 40, 50)
 end)
 
 CloseBtn.MouseButton1Click:Connect(function()
     MainFrame.Visible = false
 end)
 
-warn("Delta FPS Tools Loaded! Press F4 to toggle GUI.")
+warn("DELTA FPS HACK LOADED! PRESS F4 TO TOGGLE MENU")
