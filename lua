@@ -1,4 +1,4 @@
--- ✅ Delta FPS Aimbot PRO - Simple GUI Version (No Rayfield, Tetap Elegan)
+-- ✅ FPS Aimbot PRO - Simple GUI (No Rayfield)
 repeat wait() until game:IsLoaded()
 wait(1)
 
@@ -14,8 +14,6 @@ local aimPart = "Head"
 local aimKey = Enum.KeyCode.Q
 local maxDistance = 300
 local projectileSpeed = 160
-local guiVisible = true
-
 local espFolder = Instance.new("Folder", game.CoreGui)
 espFolder.Name = "SimpleESP"
 
@@ -30,7 +28,7 @@ pcall(function()
     end)
 end)
 
--- Simple GUI
+-- GUI Setup
 local gui = Instance.new("ScreenGui", game.CoreGui)
 gui.Name = "SimpleFPSGui"
 
@@ -38,7 +36,6 @@ local main = Instance.new("Frame", gui)
 main.Position = UDim2.new(0.02, 0, 0.2, 0)
 main.Size = UDim2.new(0, 220, 0, 320)
 main.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-main.BackgroundTransparency = 0.1
 main.Active = true
 main.Draggable = true
 
@@ -78,12 +75,9 @@ local silentBtn = addBtn("Silent Aim: OFF", function() toggle("silentAim", "Sile
 local magicBtn = addBtn("Magic Bullet: ON", function() magicBullet = not magicBullet magicBtn.Text = "Magic Bullet: "..(magicBullet and "ON" or "OFF") end)
 local switchBtn = addBtn("Target: Head", function() aimPart = (aimPart == "Head") and "HumanoidRootPart" or "Head" switchBtn.Text = "Target: "..(aimPart == "Head" and "Head" or "Body") end)
 
-addBtn("❌ Sembunyikan GUI", function()
-    guiVisible = not guiVisible
-    main.Visible = guiVisible
-end)
+addBtn("❌ Sembunyikan GUI", function() main.Visible = not main.Visible end)
 
--- ESP Drawing
+-- ESP
 local function drawESP(player)
     local box = Drawing.new("Square")
     local text = Drawing.new("Text")
@@ -119,7 +113,6 @@ local function drawESP(player)
     end)
 end
 
--- Get Closest
 local function getClosest()
     local closest, shortest = nil, maxDistance
     for _,v in pairs(Players:GetPlayers()) do
@@ -137,7 +130,6 @@ local function getClosest()
     return closest
 end
 
--- Predict
 local function getPredictedPosition(target)
     local part = target.Character and target.Character:FindFirstChild(aimPart)
     if not part then return nil end
@@ -147,7 +139,6 @@ local function getPredictedPosition(target)
     return part.Position + vel * travelTime
 end
 
--- Disable Recoil
 local function disableRecoil()
     for _, tool in pairs(lp.Character:GetChildren()) do
         if tool:IsA("Tool") then
@@ -158,7 +149,6 @@ local function disableRecoil()
     end
 end
 
--- TriggerBot
 local function triggerFire()
     local target = getClosest()
     if target and target.Character and target.Character:FindFirstChild("Humanoid") then
@@ -180,7 +170,7 @@ mt.__index = newcclosure(function(t, k)
     return oldIndex(t, k)
 end)
 
--- ESP Start
+-- ESP Loop
 run.RenderStepped:Connect(function()
     if espEnabled then
         for _, p in pairs(Players:GetPlayers()) do
@@ -210,6 +200,4 @@ run.RenderStepped:Connect(function()
     end
 
     if autoTrigger then triggerFire() end
-end) 
-
-warn("✅ GUI Sederhana FPS Aimbot Aktif! Tekan tombol GUI untuk mengontrol")
+end)
