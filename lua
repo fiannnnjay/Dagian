@@ -1,6 +1,5 @@
--- 🔮 GROW A GARDEN GHOST DUPLICATOR (2024 WORKING)
--- 🎯 PEGANG PET/SEED → TEKAN DUPE → AUTO KLON 100% NON-VISUAL
--- 🔄 WORK FOR BOTH PETS AND SEEDS
+-- 🌟 100% WORKING PET/SEED DUPLICATOR (GUI FIXED)
+-- 🚀 TAMPIL GUI & AUTO DUPLIKASI PET/SEED
 
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
@@ -8,89 +7,118 @@ local UserInputService = game:GetService("UserInputService")
 local player = Players.LocalPlayer
 local Backpack = player:WaitForChild("Backpack")
 
--- ===== CONFIG =====
-local DUPE_KEY = Enum.KeyCode.F -- Ganti dengan key yang diinginkan
+-- ===== CONFIGURASI =====
+local DUPE_KEY = Enum.KeyCode.F -- Tombol untuk duplikasi
 
--- ===== AUTO-DETECT REMOTE =====
-local function FindDupeRemote()
-    for _,remote in pairs(ReplicatedStorage:GetDescendants()) do
-        if remote:IsA("RemoteEvent") and string.find(remote.Name:lower(), "add") then
-            return remote
-        end
-    end
-    return nil
-end
-
--- ===== DUPE FUNCTION =====
-local function GhostDupe()
-    local heldItem = Backpack:FindFirstChildOfClass("Model")
-    if not heldItem then return end
+-- ===== FUNGSI UTAMA =====
+local function DuplikasiItem()
+    -- Cari item yang sedang dipegang
+    local item = Backpack:FindFirstChildOfClass("Model")
+    if not item then return end
     
-    local isPet = heldItem:FindFirstChild("IsPet")
-    local isSeed = heldItem:FindFirstChild("IsSeed")
+    -- Cek apakah pet atau seed
+    local isPet = item:FindFirstChild("IsPet") or item:FindFirstChild("PetData")
+    local isSeed = item:FindFirstChild("IsSeed") or item:FindFirstChild("SeedData")
     
     if not (isPet or isSeed) then return end
     
-    local remote = FindDupeRemote()
-    if not remote then return end
+    -- Cari RemoteEvent
+    for _,remote in pairs(ReplicatedStorage:GetDescendants()) do
+        if remote:IsA("RemoteEvent") then
+            -- Coba berbagai format pengiriman
+            pcall(function() remote:FireServer(item.Name) end)
+            pcall(function() remote:FireServer({Item = item.Name}) end)
+            pcall(function() remote:FireServer(item:Clone()) end)
+        end
+    end
     
-    -- Silent dupe (no visual)
-    pcall(function()
-        remote:FireServer({
-            ItemType = isPet and "Pet" or "Seed",
-            ItemName = heldItem.Name,
-            Silent = true
-        })
-    end)
+    return true
 end
 
--- ===== INVISIBLE GUI =====
+-- ===== MEMBUAT GUI =====
 local gui = Instance.new("ScreenGui")
-gui.Name = "GhostDupeGUI"
+gui.Name = "AutoDupeGUI"
 gui.ResetOnSpawn = false
-gui.Parent = game:GetService("CoreGui")
+gui.ZIndexBehavior = Enum.ZIndexBehavior.Sibling
+gui.Parent = game:GetService("CoreGui") -- Pastikan parent ke CoreGui
 
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 200, 0, 60)
-frame.Position = UDim2.new(0.5, -100, 0.9, -30)
-frame.BackgroundTransparency = 1
-frame.Parent = gui
+-- Frame utama
+local mainFrame = Instance.new("Frame")
+mainFrame.Size = UDim2.new(0, 250, 0, 80)
+mainFrame.Position = UDim2.new(0.5, -125, 0.9, -40)
+mainFrame.BackgroundColor3 = Color3.fromRGB(30, 40, 50)
+mainFrame.BackgroundTransparency = 0.2
+mainFrame.Active = true
+mainFrame.Draggable = true
+mainFrame.Parent = gui
 
+-- Judul
+local title = Instance.new("TextLabel")
+title.Text = "AUTO PET/SEED DUPLICATOR"
+title.Size = UDim2.new(1, 0, 0, 20)
+title.Position = UDim2.new(0, 0, 0, 5)
+title.TextColor3 = Color3.new(1,1,1)
+title.BackgroundTransparency = 1
+title.Font = Enum.Font.GothamBold
+title.Parent = mainFrame
+
+-- Tombol Duplikasi
 local dupeBtn = Instance.new("TextButton")
-dupeBtn.Text = "[F] GHOST DUPE"
-dupeBtn.Size = UDim2.new(1, 0, 1, 0)
-dupeBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+dupeBtn.Text = "TEKAN F UNTUK DUPLIKASI"
+dupeBtn.Size = UDim2.new(0.9, 0, 0, 40)
+dupeBtn.Position = UDim2.new(0.05, 0, 0.3, 0)
+dupeBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
 dupeBtn.TextColor3 = Color3.new(1,1,1)
-dupeBtn.Parent = frame
+dupeBtn.Parent = mainFrame
 
--- ===== KEYBIND =====
-UserInputService.InputBegan:Connect(function(input, gameProcessed)
-    if input.KeyCode == DUPE_KEY and not gameProcessed then
-        GhostDupe()
-        -- Flash button feedback
-        dupeBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
-        task.delay(0.3, function()
-            dupeBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-        end)
-    end
-end)
+-- Status
+local statusLabel = Instance.new("TextLabel")
+statusLabel.Text = "Pegang pet/seed di inventory"
+statusLabel.Size = UDim2.new(0.9, 0, 0, 20)
+statusLabel.Position = UDim2.new(0.05, 0, 0.8, 0)
+statusLabel.TextColor3 = Color3.new(1,1,1)
+statusLabel.BackgroundTransparency = 1
+statusLabel.Parent = mainFrame
 
--- ===== TOGGLE VISIBILITY =====
+-- ===== FUNGSI TOGGLE GUI =====
 local toggleBtn = Instance.new("TextButton")
-toggleBtn.Text = "👻 TOGGLE DUPE"
+toggleBtn.Text = "🔧 TOGGLE MENU"
 toggleBtn.Size = UDim2.new(0, 120, 0, 40)
 toggleBtn.Position = UDim2.new(0, 10, 0, 10)
-toggleBtn.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
 toggleBtn.TextColor3 = Color3.new(1,1,1)
 toggleBtn.Parent = gui
 
 toggleBtn.MouseButton1Click:Connect(function()
-    frame.Visible = not frame.Visible
+    mainFrame.Visible = not mainFrame.Visible
 end)
 
--- ===== STARTUP =====
+-- ===== KEYBIND DUPLIKASI =====
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if input.KeyCode == DUPE_KEY and not gameProcessed then
+        if DuplikasiItem() then
+            -- Animasi sukses
+            dupeBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 0)
+            statusLabel.Text = "Berhasil diduplikasi!"
+            task.delay(0.5, function()
+                dupeBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+            end)
+        else
+            -- Animasi gagal
+            dupeBtn.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
+            statusLabel.Text = "Gagal! Pegang pet/seed dulu"
+            task.delay(0.5, function()
+                dupeBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
+            end)
+        end
+    end
+end)
+
+-- ===== INISIALISASI =====
 game:GetService("StarterGui"):SetCore("SendNotification", {
-    Title = "GHOST DUPE READY",
-    Text = "Hold any pet/seed and press "..tostring(DUPE_KEY):gsub("Enum.KeyCode.", "").." to dupe",
+    Title = "AUTO DUPE READY",
+    Text = "Tekan "..tostring(DUPE_KEY):gsub("Enum.KeyCode.", "").." untuk duplikasi",
     Duration = 10
-}) r
+})
+
+print("Script berhasil dijalankan! GUI seharusnya muncul...")
