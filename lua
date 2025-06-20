@@ -1,30 +1,53 @@
--- ✅ Delta FPS Aimbot PRO with No Recoil, ESP Line, Prediction
+-- ✅ Delta FPS Aimbot PRO - FIXED Tracking + Colorful ESP + Box + Distance + Anti Kick + ESP Team Color
 local Players = game:GetService("Players")
 local lp = Players.LocalPlayer
 local cam = workspace.CurrentCamera
 local mouse = lp:GetMouse()
 local run = game:GetService("RunService")
+local uis = game:GetService("UserInputService")
 
 local aiming = false
 local espEnabled = false
 local noRecoil = false
+local autoTrigger = false
 local aimPart = "Head"
 local maxDistance = 300
-local projectileSpeed = 160 -- tweak if needed
+local projectileSpeed = 160
+local teamColorESP = true -- NEW
 
 local espFolder = Instance.new("Folder", game.CoreGui)
 espFolder.Name = "DeltaESP"
 
--- UI
-local gui = Instance.new("ScreenGui", game.CoreGui)
+-- Anti-Kick Hook
+pcall(function()
+    local mt = getrawmetatable(game)
+    setreadonly(mt, false)
+    local old = mt.__namecall
+    mt.__namecall = newcclosure(function(self, ...)
+        local method = getnamecallmethod()
+        if method == "Kick" then
+            return warn("[ANTI KICK] Blocked Kick attempt")
+        end
+        return old(self, ...)
+    end)
+end)
+
+-- GUI FIXED INJECTION
+local gui = Instance.new("ScreenGui")
 gui.Name = "DeltaFPSGui"
+gui.ResetOnSpawn = false
+gui.IgnoreGuiInset = true
+pcall(function() gui.Parent = game:GetService("CoreGui") end)
+if not gui.Parent then gui.Parent = lp:WaitForChild("PlayerGui") end
 
 local main = Instance.new("Frame", gui)
-main.Size = UDim2.new(0, 240, 0, 270)
-main.Position = UDim2.new(0, 20, 0, 100)
+main.Size = UDim2.new(0, 240, 0, 350)
+main.Position = UDim2.new(0.5, -120, 0.5, -175)
 main.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 main.Active = true
 main.Draggable = true
+main.ZIndex = 99
+main.BackgroundTransparency = 0
 
 local function createBtn(name, text, y)
     local btn = Instance.new("TextButton", main)
@@ -42,8 +65,9 @@ end
 local aimBtn = createBtn("Aimbot", "Aimbot: OFF", 40)
 local espBtn = createBtn("ESP", "ESP: OFF", 80)
 local recoilBtn = createBtn("NoRecoil", "No Recoil: OFF", 120)
-local partBtn = createBtn("AimPart", "Target: Head", 160)
-local closeBtn = createBtn("Close", "❌ Tutup GUI", 210)
+local triggerBtn = createBtn("AutoTrigger", "Auto Trigger: OFF", 160)
+local partBtn = createBtn("AimPart", "Target: Head", 200)
+local closeBtn = createBtn("Close", "❌ Tutup GUI", 245)
 
 local title = Instance.new("TextLabel", main)
 title.Size = UDim2.new(1, 0, 0, 30)
@@ -67,6 +91,11 @@ end)
 recoilBtn.MouseButton1Click:Connect(function()
     noRecoil = not noRecoil
     recoilBtn.Text = noRecoil and "No Recoil: ON" or "No Recoil: OFF"
+end)
+
+triggerBtn.MouseButton1Click:Connect(function()
+    autoTrigger = not autoTrigger
+    triggerBtn.Text = autoTrigger and "Auto Trigger: ON" or "Auto Trigger: OFF"
 end)
 
 partBtn.MouseButton1Click:Connect(function()
@@ -93,7 +122,7 @@ end)
 local function getClosest()
     local closest, shortest = nil, maxDistance
     for _,v in pairs(Players:GetPlayers()) do
-        if v ~= lp and v.Character and v.Character:FindFirstChild(aimPart) then
+        if v ~= lp and v.Team ~= lp.Team and v.Character and v.Character:FindFirstChild(aimPart) then
             local part = v.Character[aimPart]
             local pos, onScreen = cam:WorldToViewportPoint(part.Position)
             if onScreen then
@@ -108,18 +137,47 @@ local function getClosest()
     return closest
 end
 
-local function addLineESP(player)
-    local line = Instance.new("BillboardGui", espFolder)
-    line.Name = player.Name .. "_Line"
-    line.AlwaysOnTop = true
-    line.Size = UDim2.new(0, 0, 0, 0)
-    local frame = Instance.new("Frame", line)
-    frame.Size = UDim2.new(0, 2, 1, 0)
-    frame.Position = UDim2.new(0, -1, 0, 0)
-    frame.BackgroundColor3 = Color3.fromRGB(0,255,0)
-    frame.BorderSizePixel = 0
-    frame.Name = "Line"
-    return line
+-- Improved ESP with Colorful Box & Distance
+local function drawESP(player)
+    local box = Drawing.new("Square")
+    box.Thickness = 2
+    box.Filled = false
+    box.Visible = true
+    box.Color = teamColorESP and player.TeamColor.Color or Color3.fromHSV(math.random(), 1, 1)
+
+    local text = Drawing.new("Text")
+    text.Size = 14
+    text.Center = true
+    text.Outline = true
+    text.Visible = true
+    text.Color = Color3.fromRGB(255,255,255)
+
+    local function update()
+        run.RenderStepped:Connect(function()
+            if player and player.Character and player.Character:FindFirstChild("HumanoidRootPart") and espEnabled then
+                local hrp = player.Character.HumanoidRootPart
+                local pos, onScreen = cam:WorldToViewportPoint(hrp.Position)
+                if onScreen then
+                    local scale = 1 / (hrp.Position - cam.CFrame.Position).Magnitude * 100
+                    local size = Vector2.new(4, 6) * scale * 10
+                    box.Size = size
+                    box.Position = Vector2.new(pos.X - size.X / 2, pos.Y - size.Y / 2)
+                    box.Visible = true
+
+                    text.Text = string.format("%s [%.0fm]", player.Name, (hrp.Position - lp.Character.HumanoidRootPart.Position).Magnitude/3.5)
+                    text.Position = Vector2.new(pos.X, pos.Y - size.Y / 2 - 14)
+                    text.Visible = true
+                else
+                    box.Visible = false
+                    text.Visible = false
+                end
+            else
+                box.Visible = false
+                text.Visible = false
+            end
+        end)
+    end
+    update()
 end
 
 -- Prediction math
@@ -132,7 +190,6 @@ local function getPredictedPosition(target)
     return part.Position + vel * travelTime
 end
 
--- Hook recoil (basic)
 local function disableRecoil()
     for _, tool in pairs(lp.Character:GetChildren()) do
         if tool:IsA("Tool") then
@@ -141,6 +198,17 @@ local function disableRecoil()
                     obj.Disabled = true
                 end
             end
+        end
+    end
+end
+
+-- Auto Trigger Function
+local function triggerFire()
+    local target = getClosest()
+    if target and target.Character and target.Character:FindFirstChild("Humanoid") then
+        local hum = target.Character.Humanoid
+        if hum.Health > 0 then
+            mouse1click()
         end
     end
 end
@@ -154,17 +222,20 @@ run.RenderStepped:Connect(function()
         if target and target.Character and target.Character:FindFirstChild(aimPart) then
             local predicted = getPredictedPosition(target)
             if predicted then
-                cam.CFrame = cam.CFrame:Lerp(CFrame.new(cam.CFrame.Position, predicted), 0.2)
+                local direction = (predicted - cam.CFrame.Position).Unit
+                cam.CFrame = CFrame.new(cam.CFrame.Position, cam.CFrame.Position + direction)
             end
         end
     end
 
+    if autoTrigger then triggerFire() end
+
     if espEnabled then
         for _, p in pairs(Players:GetPlayers()) do
-            if p ~= lp and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                local tag = espFolder:FindFirstChild(p.Name .. "_Line")
-                if not tag then tag = addLineESP(p) end
-                tag.Adornee = p.Character:FindFirstChild("HumanoidRootPart")
+            if p ~= lp and not espFolder:FindFirstChild(p.Name) then
+                local tag = Instance.new("BoolValue", espFolder)
+                tag.Name = p.Name
+                drawESP(p)
             end
         end
     end
