@@ -1,112 +1,82 @@
--- ✅ Grow A Garden Pet & Seed Spawner GUI (Exploit-ready)
--- 💥 Pet/Seed langsung masuk inventory & bisa dipakai (visible)
+-- ✅ Grow A Garden Pet Duplicator GUI
+-- GUI Tampilan seperti TikTok: Duplicate Craft
 
 local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local UserInputService = game:GetService("UserInputService")
-local CoreGui = game:GetService("CoreGui")
+local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
-local Backpack = player:WaitForChild("Backpack")
+local mouse = player:GetMouse()
+local character = player.Character or player.CharacterAdded:Wait()
 
--- ✅ Fungsi notifikasi
-local function notify(text)
-    pcall(function()
-        game.StarterGui:SetCore("SendNotification", {
-            Title = "Grow a Garden Spawner",
-            Text = text,
-            Duration = 3
-        })
-    end)
-end
+-- GUI Setup
+local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
+gui.Name = "PetDuplicatorGUI"
 
--- GUI
-local gui = Instance.new("ScreenGui")
-gui.Name = "GrowSpawnerGUI"
-gui.ResetOnSpawn = false
-gui.IgnoreGuiInset = true
-pcall(function() gui.Parent = CoreGui end)
-
-local toggleBtn = Instance.new("TextButton")
-toggleBtn.Size = UDim2.new(0, 140, 0, 30)
-toggleBtn.Position = UDim2.new(0, 20, 0, 60)
-toggleBtn.Text = "Toggle Spawner GUI"
-toggleBtn.BackgroundColor3 = Color3.fromRGB(0, 200, 255)
-toggleBtn.TextColor3 = Color3.new(1,1,1)
-toggleBtn.Parent = gui
-
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 280, 0, 160)
-frame.Position = UDim2.new(0.5, -140, 0.5, -80)
-frame.BackgroundColor3 = Color3.fromRGB(50, 100, 200)
-frame.Name = "GrowSpawner"
+local frame = Instance.new("Frame", gui)
+frame.Size = UDim2.new(0, 300, 0, 120)
+frame.Position = UDim2.new(0.5, -150, 0.5, -60)
+frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+frame.Visible = false
 frame.Active = true
 frame.Draggable = true
-frame.Visible = false
-frame.Parent = gui
+
+local title = Instance.new("TextLabel", frame)
+title.Text = "DUPLICATE PET CRAFT EVENT"
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+title.TextColor3 = Color3.fromRGB(255, 255, 0)
+title.TextScaled = true
+\local petInfo = Instance.new("TextLabel", frame)
+petInfo.Size = UDim2.new(1, 0, 0, 30)
+petInfo.Position = UDim2.new(0, 0, 0, 30)
+petInfo.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+petInfo.TextColor3 = Color3.new(1, 1, 1)
+petInfo.TextScaled = true
+
+local spawnBtn = Instance.new("TextButton", frame)
+spawnBtn.Text = "DUPLICATE NOW"
+spawnBtn.Size = UDim2.new(1, 0, 0, 40)
+spawnBtn.Position = UDim2.new(0, 0, 0, 75)
+spawnBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
+spawnBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
+spawnBtn.TextScaled = true
+spawnBtn.Active = false
+
+-- Toggle button
+local toggleBtn = Instance.new("TextButton", gui)
+toggleBtn.Size = UDim2.new(0, 150, 0, 35)
+toggleBtn.Position = UDim2.new(0, 10, 0, 100)
+toggleBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+toggleBtn.TextColor3 = Color3.new(1, 1, 1)
+toggleBtn.Text = "🧬 Open Spawner"
+toggleBtn.TextScaled = true
 
 toggleBtn.MouseButton1Click:Connect(function()
     frame.Visible = not frame.Visible
 end)
 
--- Tabs
-local petTab = Instance.new("TextButton", frame)
-petTab.Size = UDim2.new(0.5, 0, 0, 30)
-petTab.Position = UDim2.new(0, 0, 0, 0)
-petTab.Text = "Pet Spawner"
-
-local seedTab = petTab:Clone()
-seedTab.Text = "Seed Spawner"
-seedTab.Position = UDim2.new(0.5, 0, 0, 0)
-seedTab.Parent = frame
-petTab.Parent = frame
-
--- Input
-local nameBox = Instance.new("TextBox", frame)
-nameBox.PlaceholderText = "Enter Name (ex: Raccoon)"
-nameBox.Position = UDim2.new(0, 10, 0, 50)
-nameBox.Size = UDim2.new(1, -20, 0, 30)
-nameBox.Text = ""
-nameBox.BackgroundColor3 = Color3.fromRGB(255,255,255)
-nameBox.TextColor3 = Color3.fromRGB(0,0,0)
-nameBox.Parent = frame
-
--- Spawn Button
-local spawnBtn = Instance.new("TextButton", frame)
-spawnBtn.Text = "Spawn"
-spawnBtn.Size = UDim2.new(1, -20, 0, 40)
-spawnBtn.Position = UDim2.new(0, 10, 0, 100)
-spawnBtn.BackgroundColor3 = Color3.fromRGB(0, 100, 255)
-spawnBtn.TextColor3 = Color3.new(1,1,1)
-spawnBtn.Font = Enum.Font.GothamBold
-spawnBtn.TextSize = 16
-spawnBtn.Parent = frame
-
--- Logic
-local currentMode = "Pet"
-petTab.MouseButton1Click:Connect(function()
-    currentMode = "Pet"
-    nameBox.PlaceholderText = "Enter Pet Name"
-end)
-seedTab.MouseButton1Click:Connect(function()
-    currentMode = "Seed"
-    nameBox.PlaceholderText = "Enter Seed Name"
-end)
-
-spawnBtn.MouseButton1Click:Connect(function()
-    local name = nameBox.Text
-    if name == "" then return end
-
-    local folderName = currentMode == "Pet" and "PetModels" or "Seeds"
-    local folder = ReplicatedStorage:FindFirstChild(folderName)
-    if folder then
-        for _, obj in pairs(folder:GetChildren()) do
-            if obj.Name:lower() == name:lower() then
-                local clone = obj:Clone()
-                clone.Parent = Backpack
-                notify(currentMode .. " Added: " .. obj.Name)
-                return
-            end
-        end
+-- Check tool & update info
+RunService.RenderStepped:Connect(function()
+    local tool = character:FindFirstChildOfClass("Tool")
+    if tool and tool.Name then
+        local name = tool.Name
+        local desc = tool:FindFirstChild("Description")
+        local weight = name:match("%[(.-)KG%]") or "?"
+        local age = name:match("Age (%d+)") or "?"
+        petInfo.Text = name
+        spawnBtn.Active = true
+        spawnBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
+    else
+        petInfo.Text = "No Pet Detected"
+        spawnBtn.Active = false
+        spawnBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
     end
-    notify("Not Found in " .. folderName)
+end)
+
+-- On spawn click
+spawnBtn.MouseButton1Click:Connect(function()
+    local tool = character:FindFirstChildOfClass("Tool")
+    if tool then
+        local clone = tool:Clone()
+        clone.Parent = player.Backpack
+    end
 end)
