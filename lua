@@ -1,55 +1,78 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
+local Backpack = player:WaitForChild("Backpack")
 local RunService = game:GetService("RunService")
 
-local currentPet = nil
+local inventoryPets = {}
 
 -- GUI WINDOW
 local Window = Rayfield:CreateWindow({
-    Name = "Pet Spawner GUI",
-    LoadingTitle = "Grow Garden Pet Tool",
+    Name = "Pet Dupe GUI",
+    LoadingTitle = "Grow Garden Pet Cloner",
     ConfigurationSaving = {
         Enabled = true,
         FolderName = "GrowPetGUI",
-        FileName = "spawner_config"
+        FileName = "clone_pet_config"
     },
 })
 
 -- PET TAB
 local PetTab = Window:CreateTab("Pet", 4483362458)
-
 PetTab:CreateParagraph({
-    Title = "Pet Spawner",
-    Content = "Pegang Pet dulu untuk mendeteksi dan clone otomatis."
+    Title = "Inventory Pet Clone",
+    Content = "Pilih pet dari bar inventory bawah, lalu spawn 1:1."
 })
 
+-- Dropdown untuk list pet dari Backpack
+local selectedPetName = nil
+
+local dropdown = PetTab:CreateDropdown({
+    Name = "Pilih Pet dari Inventory Bar",
+    Options = {},
+    CurrentOption = nil,
+    Callback = function(option)
+        selectedPetName = option
+    end
+})
+
+-- Tombol untuk spawn clone pet
 PetTab:CreateButton({
-    Name = "Spawn Clone Pet (Full Function)",
+    Name = "Clone Pet (Full, Tradeable, Equipable)",
     Callback = function()
-        if currentPet and currentPet:IsA("Tool") then
-            local clone = currentPet:Clone()
-            clone.Parent = player.Backpack
-            Rayfield:Notify({
-                Title = "Pet Spawner",
-                Content = "Pet berhasil di-clone ke tas: " .. clone.Name,
-                Duration = 4
-            })
+        if selectedPetName then
+            for _, tool in ipairs(Backpack:GetChildren()) do
+                if tool:IsA("Tool") and tool.Name == selectedPetName then
+                    local clone = tool:Clone()
+                    clone.Name = tool.Name .. "_Clone"
+                    clone.Parent = Backpack
+
+                    Rayfield:Notify({
+                        Title = "Clone Pet",
+                        Content = "Berhasil clone: " .. tool.Name,
+                        Duration = 4
+                    })
+                    return
+                end
+            end
         else
             Rayfield:Notify({
-                Title = "Pet Spawner",
-                Content = "Tidak ada Pet yang valid sedang dipegang!",
+                Title = "Clone Pet",
+                Content = "Pilih pet dulu dari dropdown!",
                 Duration = 4
             })
         end
     end
 })
 
--- DETEKSI PET SAAT DIPANGGUL
-RunService.RenderStepped:Connect(function()
-    local tool = character:FindFirstChildOfClass("Tool")
-    if tool and tool:FindFirstChild("Handle") then
-        currentPet = tool
+-- Update list dropdown setiap 2 detik
+while true do
+    task.wait(2)
+    inventoryPets = {}
+    for _, tool in ipairs(Backpack:GetChildren()) do
+        if tool:IsA("Tool") and tool:FindFirstChild("Handle") then
+            table.insert(inventoryPets, tool.Name)
+        end
     end
-end)
+    dropdown:Refresh(inventoryPets, true)
+end
