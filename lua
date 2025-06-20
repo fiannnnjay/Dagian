@@ -4,7 +4,7 @@ local player = Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local RunService = game:GetService("RunService")
 
-local spawnerData = {Name = "", Age = 0, Size = Vector3.new(1, 1, 1)}
+local currentPet = nil
 
 -- GUI WINDOW
 local Window = Rayfield:CreateWindow({
@@ -22,46 +22,34 @@ local PetTab = Window:CreateTab("Pet", 4483362458)
 
 PetTab:CreateParagraph({
     Title = "Pet Spawner",
-    Content = "Pegang Pet dulu untuk mendeteksi data otomatis."
+    Content = "Pegang Pet dulu untuk mendeteksi dan clone otomatis."
 })
 
 PetTab:CreateButton({
-    Name = "Spawn Pet (No Visual)",
+    Name = "Spawn Clone Pet (Full Function)",
     Callback = function()
-        if spawnerData.Name ~= "" then
-            local fakePet = Instance.new("Tool")
-            fakePet.Name = spawnerData.Name
-            fakePet.Parent = player.Backpack
-
-            local part = Instance.new("Part")
-            part.Name = "Handle"
-            part.Size = spawnerData.Size
-            part.Anchored = false
-            part.CanCollide = false
-            part.Transparency = 1
-            part.Parent = fakePet
-
+        if currentPet and currentPet:IsA("Tool") then
+            local clone = currentPet:Clone()
+            clone.Parent = player.Backpack
             Rayfield:Notify({
                 Title = "Pet Spawner",
-                Content = "Pet berhasil di-spawn: " .. spawnerData.Name,
+                Content = "Pet berhasil di-clone ke tas: " .. clone.Name,
                 Duration = 4
             })
         else
             Rayfield:Notify({
                 Title = "Pet Spawner",
-                Content = "Tidak ada Pet terdeteksi di tangan!",
+                Content = "Tidak ada Pet yang valid sedang dipegang!",
                 Duration = 4
             })
         end
     end
 })
 
--- AUTO UPDATE DATA SAAT PEGANG PET
+-- DETEKSI PET SAAT DIPANGGUL
 RunService.RenderStepped:Connect(function()
     local tool = character:FindFirstChildOfClass("Tool")
     if tool and tool:FindFirstChild("Handle") then
-        spawnerData.Name = tool.Name
-        spawnerData.Size = tool.Handle.Size
-        spawnerData.Age = math.floor(os.clock())
+        currentPet = tool
     end
 end)
