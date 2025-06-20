@@ -1,71 +1,68 @@
+-- Aimbot GUI by Delta
+local Players = game:GetService("Players")
+local lp = Players.LocalPlayer
+local mouse = lp:GetMouse()
+local run = game:GetService("RunService")
 local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "DeltaFlyMobile"
+gui.Name = "FPSAimbot"
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 220, 0, 160)
+frame.Size = UDim2.new(0, 200, 0, 140)
 frame.Position = UDim2.new(0, 20, 0, 100)
 frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+frame.Active = true
+frame.Draggable = true
 
-local up = Instance.new("TextButton", frame)
-up.Size = UDim2.new(1, 0, 0, 50)
-up.Position = UDim2.new(0, 0, 0, 10)
-up.Text = "⬆️ Terbang Naik"
-up.BackgroundColor3 = Color3.fromRGB(50,50,50)
-up.TextColor3 = Color3.new(1,1,1)
-up.Font = Enum.Font.SourceSansBold
-up.TextSize = 16
+local title = Instance.new("TextLabel", frame)
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Text = "Delta Aimbot"
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 18
 
-local down = Instance.new("TextButton", frame)
-down.Size = UDim2.new(1, 0, 0, 50)
-down.Position = UDim2.new(0, 0, 0, 70)
-down.Text = "⬇️ Turun"
-down.BackgroundColor3 = Color3.fromRGB(50,50,50)
-down.TextColor3 = Color3.new(1,1,1)
-down.Font = Enum.Font.SourceSansBold
-down.TextSize = 16
+local toggle = Instance.new("TextButton", frame)
+toggle.Size = UDim2.new(1, -20, 0, 40)
+toggle.Position = UDim2.new(0, 10, 0, 40)
+toggle.Text = "🟢 Aimbot: OFF"
+toggle.BackgroundColor3 = Color3.fromRGB(50,50,50)
+toggle.TextColor3 = Color3.new(1,1,1)
+toggle.Font = Enum.Font.SourceSans
+toggle.TextSize = 16
 
-local stopBtn = Instance.new("TextButton", frame)
-stopBtn.Size = UDim2.new(1, 0, 0, 30)
-stopBtn.Position = UDim2.new(0, 0, 0, 130)
-stopBtn.Text = "❌ Stop Fly"
-stopBtn.BackgroundColor3 = Color3.fromRGB(100,0,0)
-stopBtn.TextColor3 = Color3.new(1,1,1)
-stopBtn.Font = Enum.Font.SourceSansBold
-stopBtn.TextSize = 14
+local part = "Head"
+local aiming = false
 
--- Fly Logic
-local bv
-local function startFly()
-   local char = game.Players.LocalPlayer.Character
-   local root = char and char:FindFirstChild("HumanoidRootPart")
-   if root and not bv then
-      bv = Instance.new("BodyVelocity", root)
-      bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-      bv.Velocity = Vector3.new(0,0,0)
-   end
-end
-
-local function flyUp()
-   if bv then bv.Velocity = Vector3.new(0, 60, 0) end
-end
-
-local function flyDown()
-   if bv then bv.Velocity = Vector3.new(0, -60, 0) end
-end
-
-local function stopFly()
-   if bv then bv:Destroy() bv = nil end
-end
-
-up.MouseButton1Click:Connect(function()
-   startFly()
-   flyUp()
+toggle.MouseButton1Click:Connect(function()
+	aiming = not aiming
+	toggle.Text = aiming and "🟢 Aimbot: ON" or "🔴 Aimbot: OFF"
 end)
 
-down.MouseButton1Click:Connect(function()
-   startFly()
-   flyDown()
-end)
+-- Core aimbot function
+local function getClosest()
+	local cam = workspace.CurrentCamera
+	local closest, dist = nil, math.huge
+	for _, v in pairs(Players:GetPlayers()) do
+		if v ~= lp and v.Character and v.Character:FindFirstChild(part) then
+			local pos, onScreen = cam:WorldToViewportPoint(v.Character[part].Position)
+			if onScreen then
+				local mag = (Vector2.new(pos.X, pos.Y) - Vector2.new(mouse.X, mouse.Y)).Magnitude
+				if mag < dist then
+					closest = v
+					dist = mag
+				end
+			end
+		end
+	end
+	return closest
+end
 
-stopBtn.MouseButton1Click:Connect(function()
-   stopFly()
+run.RenderStepped:Connect(function()
+	if aiming then
+		local target = getClosest()
+		if target and target.Character and target.Character:FindFirstChild(part) then
+			local cam = workspace.CurrentCamera
+			local targetPos = target.Character[part].Position
+			cam.CFrame = cam.CFrame:Lerp(CFrame.new(cam.CFrame.Position, targetPos), 0.15)
+		end
+	end
 end)
