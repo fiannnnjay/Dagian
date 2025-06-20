@@ -1,99 +1,82 @@
+-- ✅ Grow A Garden Pet & Seed Spawner GUI (Exploit-ready)
+-- 💥 Pet/Seed langsung masuk inventory & bisa dipakai (visible)
+
 local Players = game:GetService("Players")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local player = Players.LocalPlayer
 local Backpack = player:WaitForChild("Backpack")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
+
+-- ✅ Fungsi notifikasi
+local function notify(text)
+    game.StarterGui:SetCore("SendNotification", {
+        Title = "Grow a Garden Spawner",
+        Text = text,
+        Duration = 3
+    })
+end
 
 -- GUI
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-gui.Name = "SpawnerGUI"
-
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 300, 0, 180)
-frame.Position = UDim2.new(0.5, -150, 0.5, -90)
+frame.Size = UDim2.new(0, 280, 0, 160)
+frame.Position = UDim2.new(0.5, -140, 0.5, -80)
 frame.BackgroundColor3 = Color3.fromRGB(50, 100, 200)
-frame.BorderSizePixel = 0
+frame.Name = "GrowSpawner"
 
--- Title
-local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1, 0, 0, 30)
-title.BackgroundTransparency = 1
-title.Text = "Spawner"
-title.TextColor3 = Color3.new(1,1,1)
-title.Font = Enum.Font.GothamBold
-title.TextSize = 20
+-- Tabs
+local petTab = Instance.new("TextButton", frame)
+petTab.Size = UDim2.new(0.5, 0, 0, 30)
+petTab.Position = UDim2.new(0, 0, 0, 0)
+petTab.Text = "Pet Spawner"
 
--- Close Button
-local close = Instance.new("TextButton", frame)
-close.Text = "X"
-close.Size = UDim2.new(0, 25, 0, 25)
-close.Position = UDim2.new(1, -30, 0, 5)
-close.BackgroundColor3 = Color3.fromRGB(200, 0, 0)
-close.TextColor3 = Color3.new(1,1,1)
-close.Parent = frame
-close.MouseButton1Click:Connect(function()
-    frame.Visible = false
-end)
+local seedTab = petTab:Clone()
+seedTab.Text = "Seed Spawner"
+seedTab.Position = UDim2.new(0.5, 0, 0, 0)
+seedTab.Parent = frame
+petTab.Parent = frame
 
--- Tab Buttons
-local tabPet = Instance.new("TextButton", frame)
-tabPet.Size = UDim2.new(0.5, 0, 0, 30)
-tabPet.Position = UDim2.new(0, 0, 0, 30)
-tabPet.Text = "Pet Spawner"
-tabPet.BackgroundColor3 = Color3.fromRGB(100, 150, 250)
-tabPet.TextColor3 = Color3.new(1,1,1)
-tabPet.Font = Enum.Font.GothamSemibold
-tabPet.TextSize = 14
-
-local tabSeed = tabPet:Clone()
-tabSeed.Text = "Seed Spawner"
-tabSeed.Position = UDim2.new(0.5, 0, 0, 30)
-
-tabPet.Parent = frame
-tabSeed.Parent = frame
-
--- Pet Name Input
-local input = Instance.new("TextBox", frame)
-input.PlaceholderText = "Pet Name"
-input.Size = UDim2.new(1, -20, 0, 30)
-input.Position = UDim2.new(0, 10, 0, 70)
-input.BackgroundColor3 = Color3.fromRGB(255,255,255)
-input.TextColor3 = Color3.new(0,0,0)
-input.Text = ""
+-- Input
+local nameBox = Instance.new("TextBox", frame)
+nameBox.PlaceholderText = "Enter Name (ex: Raccoon)"
+nameBox.Position = UDim2.new(0, 10, 0, 50)
+nameBox.Size = UDim2.new(1, -20, 0, 30)
+nameBox.Text = ""
+nameBox.Parent = frame
 
 -- Spawn Button
-local spawn = Instance.new("TextButton", frame)
-spawn.Text = "Spawn"
-spawn.Size = UDim2.new(1, -20, 0, 40)
-spawn.Position = UDim2.new(0, 10, 0, 110)
-spawn.BackgroundColor3 = Color3.fromRGB(0, 100, 255)
-spawn.TextColor3 = Color3.new(1,1,1)
-spawn.Font = Enum.Font.GothamBold
-spawn.TextSize = 16
+local spawnBtn = Instance.new("TextButton", frame)
+spawnBtn.Text = "Spawn"
+spawnBtn.Size = UDim2.new(1, -20, 0, 40)
+spawnBtn.Position = UDim2.new(0, 10, 0, 100)
+spawnBtn.Parent = frame
 
-spawn.Parent = frame
-
--- Fungsi spawn
-spawn.MouseButton1Click:Connect(function()
-	local name = input.Text
-	if name == "" then return end
-	
-	-- Coba cari prefab pet/seed dari ReplicatedStorage
-	local target = ReplicatedStorage:FindFirstChild("PetModels") or ReplicatedStorage:FindFirstChild("Seeds")
-	if target then
-		for _, obj in pairs(target:GetChildren()) do
-			if obj.Name:lower() == name:lower() then
-				local clone = obj:Clone()
-				clone.Parent = Backpack
-				break
-			end
-		end
-	end
+-- Logic
+local currentMode = "Pet"
+petTab.MouseButton1Click:Connect(function()
+    currentMode = "Pet"
+    nameBox.PlaceholderText = "Enter Pet Name"
+end)
+seedTab.MouseButton1Click:Connect(function()
+    currentMode = "Seed"
+    nameBox.PlaceholderText = "Enter Seed Name"
 end)
 
--- Toggle tab text
-tabPet.MouseButton1Click:Connect(function()
-	input.PlaceholderText = "Pet Name"
-end)
-tabSeed.MouseButton1Click:Connect(function()
-	input.PlaceholderText = "Seed Name"
-end)
+spawnBtn.MouseButton1Click:Connect(function()
+    local name = nameBox.Text
+    if name == "" then return end
+
+    local folderName = currentMode == "Pet" and "PetModels" or "Seeds"
+    local folder = ReplicatedStorage:FindFirstChild(folderName)
+    if folder then
+        for _, obj in pairs(folder:GetChildren()) do
+            if obj.Name:lower() == name:lower() then
+                local clone = obj:Clone()
+                clone.Parent = Backpack
+                notify(currentMode .. " Added: " .. obj.Name)
+                return
+            end
+        end
+    end
+    notify("Not Found in " .. folderName)
+end)"
+}
