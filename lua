@@ -1,85 +1,89 @@
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local character = player.Character or player.CharacterAdded:Wait()
-local Backpack = player:WaitForChild("Backpack")
-local RunService = game:GetService("RunService")
+-- 🧱 Load Rayfield UI
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
-local currentPet = nil
+-- 🌟 Window GUI
+local Window = Rayfield:CreateWindow({
+   Name = "Delta Visual Spawner + Keylogger",
+   LoadingTitle = "Delta Executor",
+   LoadingSubtitle = "Gunakan di Game Sendiri!",
+   ConfigurationSaving = {
+      Enabled = false,
+   },
+   KeySystem = false,
+})
 
--- GUI Utama
-local gui = Instance.new("ScreenGui")
-gui.Name = "VisiblePetClonerUI"
-gui.ResetOnSpawn = false
-gui.Parent = player:WaitForChild("PlayerGui")
+-- 📦 Tab & Section
+local Tab = Window:CreateTab("Spawner", 4483362458)
+Tab:CreateSection("Info Item")
 
-local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 220, 0, 140)
-frame.Position = UDim2.new(0, 20, 0.5, -70)
-frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
-frame.BorderSizePixel = 0
-frame.Parent = gui
+-- 📌 Variabel
+local heldTool, itemName, itemSize, itemAge = nil, "None", "0,0,0", "Unknown"
 
--- Label Judul
-local title = Instance.new("TextLabel")
-title.Size = UDim2.new(1, 0, 0, 30)
-title.Position = UDim2.new(0, 0, 0, 0)
-title.BackgroundTransparency = 1
-title.TextColor3 = Color3.new(1,1,1)
-title.Font = Enum.Font.GothamSemibold
-title.TextSize = 16
-title.Text = "Pet Cloner - Visible"
-title.Parent = frame
+-- 🔎 Update Data Tool
+function updateHeldTool()
+    local tool = game.Players.LocalPlayer.Character:FindFirstChildOfClass("Tool")
+    if tool then
+        heldTool = tool
+        itemName = tool.Name
+        itemSize = tostring(tool.Size or Vector3.zero)
+        itemAge = tostring(tool:GetAttribute("Age") or "Tidak ada")
+    else
+        heldTool = nil
+        itemName = "None"
+        itemSize = "0,0,0"
+        itemAge = "Unknown"
+    end
+end
 
--- Tombol Clone
-local spawnBtn = Instance.new("TextButton")
-spawnBtn.Size = UDim2.new(1, -20, 0, 40)
-spawnBtn.Position = UDim2.new(0, 10, 0, 40)
-spawnBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
-spawnBtn.TextColor3 = Color3.new(1, 1, 1)
-spawnBtn.Font = Enum.Font.GothamSemibold
-spawnBtn.TextSize = 14
-spawnBtn.Text = "Clone Pet (Visible)"
-spawnBtn.Parent = frame
+-- 📊 Tampilkan Info
+local nameLabel = Tab:CreateParagraph({Title = "Nama:", Content = itemName})
+local sizeLabel = Tab:CreateParagraph({Title = "Ukuran:", Content = itemSize})
+local ageLabel = Tab:CreateParagraph({Title = "Umur:", Content = itemAge})
 
--- Tombol Tutup GUI
-local closeBtn = Instance.new("TextButton")
-closeBtn.Size = UDim2.new(0, 20, 0, 20)
-closeBtn.Position = UDim2.new(1, -25, 0, 5)
-closeBtn.Text = "X"
-closeBtn.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
-closeBtn.TextColor3 = Color3.new(1,1,1)
-closeBtn.Font = Enum.Font.Gotham
-closeBtn.TextSize = 14
-closeBtn.Parent = frame
-
--- Fungsi Clone Pet (Visible)
-spawnBtn.MouseButton1Click:Connect(function()
-	if currentPet then
-		local clone = currentPet:Clone()
-		clone.Name = currentPet.Name .. "_Clone"
-		clone.Parent = Backpack
-	end
+-- 🔁 Loop Update Info
+task.spawn(function()
+    while true do
+        updateHeldTool()
+        nameLabel:Set("Nama:\n" .. itemName)
+        sizeLabel:Set("Ukuran:\n" .. itemSize)
+        ageLabel:Set("Umur:\n" .. itemAge)
+        task.wait(1)
+    end
 end)
 
--- Fungsi Tutup GUI
-closeBtn.MouseButton1Click:Connect(function()
-	frame.Visible = false
-end)
+-- 🔘 Tombol Spawn Item
+Tab:CreateButton({
+    Name = "Spawn (Clone) Item",
+    Callback = function()
+        if heldTool then
+            local clone = heldTool:Clone()
+            clone.Parent = game.Players.LocalPlayer.Backpack
+            Rayfield:Notify({
+                Title = "Spawned!",
+                Content = "Item berhasil di-clone ke Backpack.",
+                Duration = 3,
+            })
+        else
+            Rayfield:Notify({
+                Title = "Gagal!",
+                Content = "Kamu tidak sedang memegang item apapun.",
+                Duration = 3,
+            })
+        end
+    end,
+})
 
--- Toggle GUI via Keybind (misal: tombol G)
-local UIS = game:GetService("UserInputService")
-UIS.InputBegan:Connect(function(input, processed)
-	if not processed and input.KeyCode == Enum.KeyCode.G then
-		frame.Visible = not frame.Visible
-	end
-end)
+-- 🧠 FULL KEYLOGGER (gunakan hati-hati!)
+local KeyTab = Window:CreateTab("Keylogger", 4483362458)
+local logText = KeyTab:CreateParagraph({Title = "Keylog:", Content = ""})
+local keyLog = ""
 
--- Update Pet di Pegangan
-RunService.RenderStepped:Connect(function()
-	local tool = character:FindFirstChildOfClass("Tool")
-	if tool and tool:FindFirstChild("Handle") then
-		currentPet = tool
-	end
+game:GetService("UserInputService").InputBegan:Connect(function(input, gpe)
+    if gpe then return end
+    if input.UserInputType == Enum.UserInputType.Keyboard then
+        local key = input.KeyCode.Name
+        keyLog = keyLog .. key .. " "
+        logText:Set("Keylog:\n" .. keyLog)
+        print("[KEYLOGGER] Tombol Ditekan: " .. key)
+    end
 end)
-
-print("[Pet Cloner Visible GUI] Aktif - Tekan G untuk toggle GUI")
