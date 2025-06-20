@@ -1,91 +1,85 @@
-local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
 local Backpack = player:WaitForChild("Backpack")
-local Character = player.Character or player.CharacterAdded:Wait()
 local RunService = game:GetService("RunService")
-local Workspace = game:GetService("Workspace")
 
-local currentHeldPet = nil
-local inventoryPets = {}
+local currentPet = nil
 
--- GUI
-local Window = Rayfield:CreateWindow({
-    Name = "Pet Spawner GUI",
-    LoadingTitle = "Grow Garden Pet Tool",
-    ConfigurationSaving = {
-        Enabled = true,
-        FolderName = "GrowPetGUI",
-        FileName = "spawner_config"
-    },
-})
+-- GUI Utama
+local gui = Instance.new("ScreenGui")
+gui.Name = "VisiblePetClonerUI"
+gui.ResetOnSpawn = false
+gui.Parent = player:WaitForChild("PlayerGui")
 
-local PetTab = Window:CreateTab("Pet", 4483362458)
-PetTab:CreateParagraph({
-    Title = "Pet Dupe & Scan",
-    Content = "Otomatis deteksi pet yang sedang dipegang & bisa clone."
-})
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 220, 0, 140)
+frame.Position = UDim2.new(0, 20, 0.5, -70)
+frame.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
+frame.BorderSizePixel = 0
+frame.Parent = gui
 
--- Label pet yang sedang dipegang
-local heldLabel = PetTab:CreateParagraph({
-    Title = "Pet Dipegang",
-    Content = "[Belum ada pet]"
-})
+-- Label Judul
+local title = Instance.new("TextLabel")
+title.Size = UDim2.new(1, 0, 0, 30)
+title.Position = UDim2.new(0, 0, 0, 0)
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.new(1,1,1)
+title.Font = Enum.Font.GothamSemibold
+title.TextSize = 16
+title.Text = "Pet Cloner - Visible"
+title.Parent = frame
 
--- Tombol Clone dari Pegangan
-PetTab:CreateButton({
-    Name = "Clone Pet (Dari Pegangan)",
-    Callback = function()
-        if currentHeldPet then
-            local clone = currentHeldPet:Clone()
-            clone.Parent = Backpack
-            Rayfield:Notify({
-                Title = "Clone Pet",
-                Content = "Clone berhasil: " .. clone.Name,
-                Duration = 3
-            })
-        else
-            Rayfield:Notify({
-                Title = "Clone Pet",
-                Content = "Tidak ada pet di tangan!",
-                Duration = 3
-            })
-        end
-    end
-})
+-- Tombol Clone
+local spawnBtn = Instance.new("TextButton")
+spawnBtn.Size = UDim2.new(1, -20, 0, 40)
+spawnBtn.Position = UDim2.new(0, 10, 0, 40)
+spawnBtn.BackgroundColor3 = Color3.fromRGB(0, 150, 0)
+spawnBtn.TextColor3 = Color3.new(1, 1, 1)
+spawnBtn.Font = Enum.Font.GothamSemibold
+spawnBtn.TextSize = 14
+spawnBtn.Text = "Clone Pet (Visible)"
+spawnBtn.Parent = frame
 
--- Scan semua pet di map (Workspace)
-PetTab:CreateButton({
-    Name = "Scan Semua Pet di Map",
-    Callback = function()
-        local found = {}
-        for _, v in pairs(Workspace:GetDescendants()) do
-            if v:IsA("Tool") and v:FindFirstChild("Handle") then
-                table.insert(found, v:GetFullName())
-            end
-        end
-        Rayfield:Notify({
-            Title = "Scan Pet Map",
-            Content = "Ditemukan: " .. tostring(#found) .. " pet.",
-            Duration = 5
-        })
-    end
-})
+-- Tombol Tutup GUI
+local closeBtn = Instance.new("TextButton")
+closeBtn.Size = UDim2.new(0, 20, 0, 20)
+closeBtn.Position = UDim2.new(1, -25, 0, 5)
+closeBtn.Text = "X"
+closeBtn.BackgroundColor3 = Color3.fromRGB(100, 0, 0)
+closeBtn.TextColor3 = Color3.new(1,1,1)
+closeBtn.Font = Enum.Font.Gotham
+closeBtn.TextSize = 14
+closeBtn.Parent = frame
 
--- Update tool yang dipegang
-RunService.RenderStepped:Connect(function()
-    local tool = Character:FindFirstChildOfClass("Tool")
-    if tool and tool:FindFirstChild("Handle") then
-        currentHeldPet = tool
-        heldLabel:Set({
-            Title = "Pet Dipegang",
-            Content = tool.Name
-        })
-    else
-        currentHeldPet = nil
-        heldLabel:Set({
-            Title = "Pet Dipegang",
-            Content = "[Tidak ada pet]"
-        })
-    end
+-- Fungsi Clone Pet (Visible)
+spawnBtn.MouseButton1Click:Connect(function()
+	if currentPet then
+		local clone = currentPet:Clone()
+		clone.Name = currentPet.Name .. "_Clone"
+		clone.Parent = Backpack
+	end
 end)
+
+-- Fungsi Tutup GUI
+closeBtn.MouseButton1Click:Connect(function()
+	frame.Visible = false
+end)
+
+-- Toggle GUI via Keybind (misal: tombol G)
+local UIS = game:GetService("UserInputService")
+UIS.InputBegan:Connect(function(input, processed)
+	if not processed and input.KeyCode == Enum.KeyCode.G then
+		frame.Visible = not frame.Visible
+	end
+end)
+
+-- Update Pet di Pegangan
+RunService.RenderStepped:Connect(function()
+	local tool = character:FindFirstChildOfClass("Tool")
+	if tool and tool:FindFirstChild("Handle") then
+		currentPet = tool
+	end
+end)
+
+print("[Pet Cloner Visible GUI] Aktif - Tekan G untuk toggle GUI")
