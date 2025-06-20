@@ -1,66 +1,62 @@
-local Players = game:GetService("Players")
-local player = Players.LocalPlayer
-local mouse = player:GetMouse()
-
--- GUI Setup
+local player = game:GetService("Players").LocalPlayer
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-gui.Name = "PetDuplicatorGUI"
-gui.ResetOnSpawn = false
+gui.Name = "PetDupeGUI"
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 250, 0, 160)
-frame.Position = UDim2.new(0.5, -125, 0.5, -80)
+frame.Size = UDim2.new(0, 260, 0, 160)
+frame.Position = UDim2.new(0.5, -130, 0.5, -80)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-frame.BorderSizePixel = 0
 frame.Active = true
 frame.Draggable = true
 
--- Toggle Close/Open
-local toggleBtn = Instance.new("TextButton", gui)
-toggleBtn.Size = UDim2.new(0, 25, 0, 25)
-toggleBtn.Position = UDim2.new(0.5, 110, 0.5, -105)
-toggleBtn.Text = "🔁"
-toggleBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-toggleBtn.TextColor3 = Color3.new(1, 1, 1)
-toggleBtn.MouseButton1Click:Connect(function()
-	frame.Visible = not frame.Visible
-end)
-
--- Title
 local title = Instance.new("TextLabel", frame)
-title.Text = "🐾 DUPLICATE PET"
 title.Size = UDim2.new(1, 0, 0, 30)
+title.Text = "🐾 DUPLICATE PET"
+title.TextColor3 = Color3.fromRGB(255, 255, 0)
 title.BackgroundTransparency = 1
-title.TextColor3 = Color3.new(1, 1, 0)
+title.TextScaled = true
 title.Font = Enum.Font.SourceSansBold
-title.TextSize = 20
 
--- Pet Info
 local petInfo = Instance.new("TextLabel", frame)
-petInfo.Size = UDim2.new(1, -20, 0, 50)
+petInfo.Size = UDim2.new(1, -20, 0, 60)
 petInfo.Position = UDim2.new(0, 10, 0, 35)
-petInfo.BackgroundTransparency = 1
-petInfo.TextColor3 = Color3.new(1, 1, 1)
-petInfo.TextWrapped = true
 petInfo.Text = "No Pet Detected"
-petInfo.Font = Enum.Font.SourceSans
+petInfo.TextWrapped = true
+petInfo.BackgroundTransparency = 1
+petInfo.TextColor3 = Color3.new(1,1,1)
 petInfo.TextSize = 16
+petInfo.Font = Enum.Font.SourceSans
 
--- Button
 local dupBtn = Instance.new("TextButton", frame)
-dupBtn.Text = "DUPLICATE NOW"
 dupBtn.Size = UDim2.new(1, -20, 0, 40)
-dupBtn.Position = UDim2.new(0, 10, 0, 100)
+dupBtn.Position = UDim2.new(0, 10, 0, 105)
+dupBtn.Text = "DUPLICATE NOW"
 dupBtn.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
-dupBtn.TextColor3 = Color3.new(0, 0, 0)
-dupBtn.AutoButtonColor = true
+dupBtn.TextColor3 = Color3.new(0,0,0)
 dupBtn.Visible = false
 
--- Tool Check + Auto Detect Pet Info
+-- Pet Detection
 game:GetService("RunService").RenderStepped:Connect(function()
-	local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
-	if tool and tool.Name ~= "" and string.find(tool.Name, "[") then
-		petInfo.Text = "Pet: " .. tool.Name
+	local char = player.Character
+	if not char then return end
+
+	local tool = char:FindFirstChildOfClass("Tool")
+	if tool then
+		local name = tool.Name
+		local size = "?"
+		local age = "?"
+
+		for _, child in pairs(tool:GetChildren()) do
+			if child:IsA("NumberValue") or child:IsA("IntValue") then
+				if child.Name:lower():find("size") or child.Name:lower():find("weight") then
+					size = tostring(child.Value)
+				elseif child.Name:lower():find("age") then
+					age = tostring(child.Value)
+				end
+			end
+		end
+
+		petInfo.Text = "Pet: " .. name .. "\nSize: " .. size .. " KG\nAge: " .. age
 		dupBtn.Visible = true
 	else
 		petInfo.Text = "No Pet Detected"
@@ -68,11 +64,11 @@ game:GetService("RunService").RenderStepped:Connect(function()
 	end
 end)
 
--- Spawn/Dupe
+-- Dupe Pet
 dupBtn.MouseButton1Click:Connect(function()
 	local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
-	if not tool then return end
-
-	local newPet = tool:Clone()
-	newPet.Parent = player.Backpack
+	if tool then
+		local clone = tool:Clone()
+		clone.Parent = player.Backpack
+	end
 end)
