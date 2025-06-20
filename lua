@@ -1,112 +1,102 @@
--- 🧱 Load Rayfield UI
-local Rayfield = loadstring(game:HttpGet("https://sirius.menu/rayfield"))()
+-- 🖼️ GUI Setup
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "DeltaGUI"
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 220, 0, 160)
+Frame.Position = UDim2.new(0, 20, 0, 100)
+Frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
+Frame.BorderSizePixel = 0
 
-local Window = Rayfield:CreateWindow({
-   Name = "Delta Menu",
-   LoadingTitle = "Delta Executor",
-   LoadingSubtitle = "Uang + Fly",
-   ConfigurationSaving = {
-      Enabled = false,
-   },
-   KeySystem = false,
-})
+-- 🎯 Title
+local Title = Instance.new("TextLabel", Frame)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.BackgroundTransparency = 1
+Title.Text = "Delta Fly + Uang"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 18
 
--- 💰 Tab Uang
-local MoneyTab = Window:CreateTab("Uang", 4483362458)
-MoneyTab:CreateSection("Set Uang Client-Side")
+-- 🔘 Button: Fly
+local FlyButton = Instance.new("TextButton", Frame)
+FlyButton.Size = UDim2.new(1, -20, 0, 40)
+FlyButton.Position = UDim2.new(0, 10, 0, 40)
+FlyButton.Text = "Aktifkan Fly"
+FlyButton.BackgroundColor3 = Color3.fromRGB(50,50,50)
+FlyButton.TextColor3 = Color3.new(1,1,1)
+FlyButton.Font = Enum.Font.SourceSans
+FlyButton.TextSize = 16
+FlyButton.AutoButtonColor = true
 
-local MoneyTarget = 999999
+-- 🪙 Button: Set Uang
+local MoneyButton = Instance.new("TextButton", Frame)
+MoneyButton.Size = UDim2.new(1, -20, 0, 40)
+MoneyButton.Position = UDim2.new(0, 10, 0, 90)
+MoneyButton.Text = "Set Uang ke 999999"
+MoneyButton.BackgroundColor3 = Color3.fromRGB(50,50,50)
+MoneyButton.TextColor3 = Color3.new(1,1,1)
+MoneyButton.Font = Enum.Font.SourceSans
+MoneyButton.TextSize = 16
+MoneyButton.AutoButtonColor = true
 
-MoneyTab:CreateInput({
-   Name = "Jumlah Uang",
-   PlaceholderText = "Contoh: 999999",
-   RemoveTextAfterFocusLost = true,
-   Callback = function(Value)
-      MoneyTarget = tonumber(Value) or 999999
-   end
-})
-
-MoneyTab:CreateButton({
-   Name = "Terapkan ke Money (client)",
-   Callback = function()
-      local player = game.Players.LocalPlayer
-      local stats = player:FindFirstChild("leaderstats")
-      if stats then
-         for _, stat in pairs(stats:GetChildren()) do
-            if stat:IsA("IntValue") and stat.Name:lower():find("money") then
-               stat.Value = MoneyTarget
-               Rayfield:Notify({
-                  Title = "Berhasil!",
-                  Content = "Uang diubah ke: " .. tostring(MoneyTarget),
-                  Duration = 3,
-               })
-               return
-            end
-         end
-      end
-      Rayfield:Notify({
-         Title = "Gagal!",
-         Content = "Tidak menemukan leaderstats Money.",
-         Duration = 3,
-      })
-   end
-})
-
--- 🕊️ Tab Fly
-local FlyTab = Window:CreateTab("Fly", 4483362458)
-FlyTab:CreateSection("Fly Mobile Friendly")
-
+-- 🔄 Fly Logic
 local flying = false
 local bv, bg
 
 local function startFly()
-   local root = game.Players.LocalPlayer.Character and game.Players.LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-   if not root then return end
+    local char = game.Players.LocalPlayer.Character
+    local root = char and char:FindFirstChild("HumanoidRootPart")
+    if not root then return end
 
-   bv = Instance.new("BodyVelocity")
-   bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
-   bv.Velocity = Vector3.zero
-   bv.P = 10000
-   bv.Parent = root
+    bv = Instance.new("BodyVelocity", root)
+    bv.Velocity = Vector3.zero
+    bv.MaxForce = Vector3.new(1e5, 1e5, 1e5)
 
-   bg = Instance.new("BodyGyro")
-   bg.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
-   bg.P = 10000
-   bg.CFrame = root.CFrame
-   bg.Parent = root
+    bg = Instance.new("BodyGyro", root)
+    bg.CFrame = workspace.CurrentCamera.CFrame
+    bg.MaxTorque = Vector3.new(1e5, 1e5, 1e5)
 
-   game:GetService("RunService"):BindToRenderStep("FlyDelta", Enum.RenderPriority.Input.Value, function()
-      local cam = workspace.CurrentCamera
-      local moveVec = Vector3.zero
-      local UIS = game:GetService("UserInputService")
-      if UIS:IsKeyDown(Enum.KeyCode.W) then moveVec += cam.CFrame.LookVector end
-      if UIS:IsKeyDown(Enum.KeyCode.S) then moveVec -= cam.CFrame.LookVector end
-      if UIS:IsKeyDown(Enum.KeyCode.A) then moveVec -= cam.CFrame.RightVector end
-      if UIS:IsKeyDown(Enum.KeyCode.D) then moveVec += cam.CFrame.RightVector end
-      if UIS:IsKeyDown(Enum.KeyCode.Space) then moveVec += Vector3.new(0,1,0) end
-      if UIS:IsKeyDown(Enum.KeyCode.LeftControl) then moveVec -= Vector3.new(0,1,0) end
-      bv.Velocity = moveVec.Unit * 60
-      bg.CFrame = cam.CFrame
-   end)
+    game:GetService("RunService"):BindToRenderStep("SimpleFly", Enum.RenderPriority.Input.Value, function()
+        local move = Vector3.zero
+        local cam = workspace.CurrentCamera
+        local uis = game:GetService("UserInputService")
+        if uis:IsKeyDown(Enum.KeyCode.W) then move += cam.CFrame.LookVector end
+        if uis:IsKeyDown(Enum.KeyCode.S) then move -= cam.CFrame.LookVector end
+        if uis:IsKeyDown(Enum.KeyCode.A) then move -= cam.CFrame.RightVector end
+        if uis:IsKeyDown(Enum.KeyCode.D) then move += cam.CFrame.RightVector end
+        if uis:IsKeyDown(Enum.KeyCode.Space) then move += Vector3.new(0,1,0) end
+        if uis:IsKeyDown(Enum.KeyCode.LeftControl) then move -= Vector3.new(0,1,0) end
+        bv.Velocity = move.Unit * 60
+        bg.CFrame = cam.CFrame
+    end)
 end
 
 local function stopFly()
-   game:GetService("RunService"):UnbindFromRenderStep("FlyDelta")
-   if bv then bv:Destroy() end
-   if bg then bg:Destroy() end
+    game:GetService("RunService"):UnbindFromRenderStep("SimpleFly")
+    if bv then bv:Destroy() end
+    if bg then bg:Destroy() end
 end
 
-FlyTab:CreateToggle({
-   Name = "Aktifkan Fly",
-   CurrentValue = false,
-   Callback = function(Value)
-      flying = Value
-      if flying then
-         startFly()
-         Rayfield:Notify({Title = "Fly ON", Content = "Terbang aktif", Duration = 3})
-      else
-         stopFly()
-         Rayfield:Notify({Title = "Fly OFF", Content = "Fly dimatikan", Duration = 3})
-      end
-   end
-})
+FlyButton.MouseButton1Click:Connect(function()
+    flying = not flying
+    FlyButton.Text = flying and "Matikan Fly" or "Aktifkan Fly"
+    if flying then startFly() else stopFly() end
+end)
+
+-- 💰 Uang Logic
+MoneyButton.MouseButton1Click:Connect(function()
+    local stats = game.Players.LocalPlayer:FindFirstChild("leaderstats")
+    if stats then
+        for _,v in pairs(stats:GetChildren()) do
+            if v:IsA("IntValue") and v.Name:lower():find("money") then
+                v.Value = 999999
+                MoneyButton.Text = "✅ Uang Diubah!"
+                task.wait(2)
+                MoneyButton.Text = "Set Uang ke 999999"
+                return
+            end
+        end
+    end
+    MoneyButton.Text = "❌ Gagal (No leaderstats)"
+    task.wait(2)
+    MoneyButton.Text = "Set Uang ke 999999"
+end)
