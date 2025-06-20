@@ -169,8 +169,3 @@ run.RenderStepped:Connect(function()
         end
     end
 end)
-d("HumanoidRootPart")
-            end
-        end
-    end
-end)
