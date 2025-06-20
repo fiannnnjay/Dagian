@@ -1,82 +1,78 @@
--- ✅ Grow A Garden Pet Duplicator GUI
--- GUI Tampilan seperti TikTok: Duplicate Craft
-
 local Players = game:GetService("Players")
-local RunService = game:GetService("RunService")
 local player = Players.LocalPlayer
 local mouse = player:GetMouse()
-local character = player.Character or player.CharacterAdded:Wait()
 
 -- GUI Setup
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
 gui.Name = "PetDuplicatorGUI"
+gui.ResetOnSpawn = false
 
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 300, 0, 120)
-frame.Position = UDim2.new(0.5, -150, 0.5, -60)
+frame.Size = UDim2.new(0, 250, 0, 160)
+frame.Position = UDim2.new(0.5, -125, 0.5, -80)
 frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-frame.Visible = false
+frame.BorderSizePixel = 0
 frame.Active = true
 frame.Draggable = true
 
-local title = Instance.new("TextLabel", frame)
-title.Text = "DUPLICATE PET CRAFT EVENT"
-title.Size = UDim2.new(1, 0, 0, 30)
-title.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
-title.TextColor3 = Color3.fromRGB(255, 255, 0)
-title.TextScaled = true
-\local petInfo = Instance.new("TextLabel", frame)
-petInfo.Size = UDim2.new(1, 0, 0, 30)
-petInfo.Position = UDim2.new(0, 0, 0, 30)
-petInfo.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-petInfo.TextColor3 = Color3.new(1, 1, 1)
-petInfo.TextScaled = true
-
-local spawnBtn = Instance.new("TextButton", frame)
-spawnBtn.Text = "DUPLICATE NOW"
-spawnBtn.Size = UDim2.new(1, 0, 0, 40)
-spawnBtn.Position = UDim2.new(0, 0, 0, 75)
-spawnBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
-spawnBtn.TextColor3 = Color3.fromRGB(0, 0, 0)
-spawnBtn.TextScaled = true
-spawnBtn.Active = false
-
--- Toggle button
+-- Toggle Close/Open
 local toggleBtn = Instance.new("TextButton", gui)
-toggleBtn.Size = UDim2.new(0, 150, 0, 35)
-toggleBtn.Position = UDim2.new(0, 10, 0, 100)
-toggleBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 255)
+toggleBtn.Size = UDim2.new(0, 25, 0, 25)
+toggleBtn.Position = UDim2.new(0.5, 110, 0.5, -105)
+toggleBtn.Text = "🔁"
+toggleBtn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
 toggleBtn.TextColor3 = Color3.new(1, 1, 1)
-toggleBtn.Text = "🧬 Open Spawner"
-toggleBtn.TextScaled = true
-
 toggleBtn.MouseButton1Click:Connect(function()
-    frame.Visible = not frame.Visible
+	frame.Visible = not frame.Visible
 end)
 
--- Check tool & update info
-RunService.RenderStepped:Connect(function()
-    local tool = character:FindFirstChildOfClass("Tool")
-    if tool and tool.Name then
-        local name = tool.Name
-        local desc = tool:FindFirstChild("Description")
-        local weight = name:match("%[(.-)KG%]") or "?"
-        local age = name:match("Age (%d+)") or "?"
-        petInfo.Text = name
-        spawnBtn.Active = true
-        spawnBtn.BackgroundColor3 = Color3.fromRGB(255, 255, 0)
-    else
-        petInfo.Text = "No Pet Detected"
-        spawnBtn.Active = false
-        spawnBtn.BackgroundColor3 = Color3.fromRGB(100, 100, 100)
-    end
+-- Title
+local title = Instance.new("TextLabel", frame)
+title.Text = "🐾 DUPLICATE PET"
+title.Size = UDim2.new(1, 0, 0, 30)
+title.BackgroundTransparency = 1
+title.TextColor3 = Color3.new(1, 1, 0)
+title.Font = Enum.Font.SourceSansBold
+title.TextSize = 20
+
+-- Pet Info
+local petInfo = Instance.new("TextLabel", frame)
+petInfo.Size = UDim2.new(1, -20, 0, 50)
+petInfo.Position = UDim2.new(0, 10, 0, 35)
+petInfo.BackgroundTransparency = 1
+petInfo.TextColor3 = Color3.new(1, 1, 1)
+petInfo.TextWrapped = true
+petInfo.Text = "No Pet Detected"
+petInfo.Font = Enum.Font.SourceSans
+petInfo.TextSize = 16
+
+-- Button
+local dupBtn = Instance.new("TextButton", frame)
+dupBtn.Text = "DUPLICATE NOW"
+dupBtn.Size = UDim2.new(1, -20, 0, 40)
+dupBtn.Position = UDim2.new(0, 10, 0, 100)
+dupBtn.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
+dupBtn.TextColor3 = Color3.new(0, 0, 0)
+dupBtn.AutoButtonColor = true
+dupBtn.Visible = false
+
+-- Tool Check + Auto Detect Pet Info
+game:GetService("RunService").RenderStepped:Connect(function()
+	local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
+	if tool and tool.Name ~= "" and string.find(tool.Name, "[") then
+		petInfo.Text = "Pet: " .. tool.Name
+		dupBtn.Visible = true
+	else
+		petInfo.Text = "No Pet Detected"
+		dupBtn.Visible = false
+	end
 end)
 
--- On spawn click
-spawnBtn.MouseButton1Click:Connect(function()
-    local tool = character:FindFirstChildOfClass("Tool")
-    if tool then
-        local clone = tool:Clone()
-        clone.Parent = player.Backpack
-    end
+-- Spawn/Dupe
+dupBtn.MouseButton1Click:Connect(function()
+	local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
+	if not tool then return end
+
+	local newPet = tool:Clone()
+	newPet.Parent = player.Backpack
 end)
