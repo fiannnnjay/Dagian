@@ -2,77 +2,90 @@ local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 local Players = game:GetService("Players")
 local player = Players.LocalPlayer
 local Backpack = player:WaitForChild("Backpack")
+local Character = player.Character or player.CharacterAdded:Wait()
 local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
 
+local currentHeldPet = nil
 local inventoryPets = {}
 
--- GUI WINDOW
+-- GUI
 local Window = Rayfield:CreateWindow({
-    Name = "Pet Dupe GUI",
-    LoadingTitle = "Grow Garden Pet Cloner",
+    Name = "Pet Spawner GUI",
+    LoadingTitle = "Grow Garden Pet Tool",
     ConfigurationSaving = {
         Enabled = true,
         FolderName = "GrowPetGUI",
-        FileName = "clone_pet_config"
+        FileName = "spawner_config"
     },
 })
 
--- PET TAB
 local PetTab = Window:CreateTab("Pet", 4483362458)
 PetTab:CreateParagraph({
-    Title = "Inventory Pet Clone",
-    Content = "Pilih pet dari bar inventory bawah, lalu spawn 1:1."
+    Title = "Pet Dupe & Scan",
+    Content = "Otomatis deteksi pet yang sedang dipegang & bisa clone."
 })
 
--- Dropdown untuk list pet dari Backpack
-local selectedPetName = nil
-
-local dropdown = PetTab:CreateDropdown({
-    Name = "Pilih Pet dari Inventory Bar",
-    Options = {},
-    CurrentOption = nil,
-    Callback = function(option)
-        selectedPetName = option
-    end
+-- Label pet yang sedang dipegang
+local heldLabel = PetTab:CreateParagraph({
+    Title = "Pet Dipegang",
+    Content = "[Belum ada pet]"
 })
 
--- Tombol untuk spawn clone pet
+-- Tombol Clone dari Pegangan
 PetTab:CreateButton({
-    Name = "Clone Pet (Full, Tradeable, Equipable)",
+    Name = "Clone Pet (Dari Pegangan)",
     Callback = function()
-        if selectedPetName then
-            for _, tool in ipairs(Backpack:GetChildren()) do
-                if tool:IsA("Tool") and tool.Name == selectedPetName then
-                    local clone = tool:Clone()
-                    clone.Name = tool.Name .. "_Clone"
-                    clone.Parent = Backpack
-
-                    Rayfield:Notify({
-                        Title = "Clone Pet",
-                        Content = "Berhasil clone: " .. tool.Name,
-                        Duration = 4
-                    })
-                    return
-                end
-            end
+        if currentHeldPet then
+            local clone = currentHeldPet:Clone()
+            clone.Parent = Backpack
+            Rayfield:Notify({
+                Title = "Clone Pet",
+                Content = "Clone berhasil: " .. clone.Name,
+                Duration = 3
+            })
         else
             Rayfield:Notify({
                 Title = "Clone Pet",
-                Content = "Pilih pet dulu dari dropdown!",
-                Duration = 4
+                Content = "Tidak ada pet di tangan!",
+                Duration = 3
             })
         end
     end
 })
 
--- Update list dropdown setiap 2 detik
-while true do
-    task.wait(2)
-    inventoryPets = {}
-    for _, tool in ipairs(Backpack:GetChildren()) do
-        if tool:IsA("Tool") and tool:FindFirstChild("Handle") then
-            table.insert(inventoryPets, tool.Name)
+-- Scan semua pet di map (Workspace)
+PetTab:CreateButton({
+    Name = "Scan Semua Pet di Map",
+    Callback = function()
+        local found = {}
+        for _, v in pairs(Workspace:GetDescendants()) do
+            if v:IsA("Tool") and v:FindFirstChild("Handle") then
+                table.insert(found, v:GetFullName())
+            end
         end
+        Rayfield:Notify({
+            Title = "Scan Pet Map",
+            Content = "Ditemukan: " .. tostring(#found) .. " pet.",
+            Duration = 5
+        })
     end
-    dropdown:Refresh(inventoryPets, true)
-end
+})
+
+-- Update tool yang dipegang
+RunService.RenderStepped:Connect(function()
+    local tool = Character:FindFirstChildOfClass("Tool")
+    if tool and tool:FindFirstChild("Handle") then
+        currentHeldPet = tool
+        heldLabel:Set({
+            Title = "Pet Dipegang",
+            Content = tool.Name
+        })
+    else
+        currentHeldPet = nil
+        heldLabel:Set({
+            Title = "Pet Dipegang",
+            Content = "[Tidak ada pet]"
+        })
+    end
+end)
