@@ -1,115 +1,107 @@
--- 🌟 SUPER PET SPAWNER v3.0 (100% WORKING FIX)
--- 🔥 AUTO-REMOTE DETECTION + MULTI-METHOD
--- 🛡️ BYPASS ANTI-CHEAT SYSTEM
+-- 🌱 Grow A Garden GUI Fix Version
+local plr = game.Players.LocalPlayer
+local rs = game:GetService("ReplicatedStorage")
+local backpack = plr:WaitForChild("Backpack")
 
-local Players = game:GetService("Players")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local player = Players.LocalPlayer
-
--- ===== AUTO-CONFIG SYSTEM =====
-local Config = {
-    RemoteNames = {"AddPet", "PetAdd", "PetSystem", "InventoryAdd", "GiveItem"},
-    PetData = {
-        Name = "Dragon",
-        ID = 1,
-        Type = "Pet",
-        Rarity = "Legendary"
-    }
-}
-
--- ===== SMART REMOTE DETECTOR =====
-local function FindRemote()
-    for _,remoteName in pairs(Config.RemoteNames) do
-        for _,item in pairs(ReplicatedStorage:GetDescendants()) do
-            if item:IsA("RemoteEvent") and string.find(string.lower(item.Name), string.lower(remoteName)) then
-                return item
-            end
-        end
-    end
-    return nil
-end
-
--- ===== ADVANCED SPAWN FUNCTION =====
-local function SpawnPet(petName)
-    local remote = FindRemote()
-    if not remote then
-        return false, "Remote not found"
-    end
-
-    -- Try various parameter formats
-    local payloads = {
-        {petName},
-        {Name = petName},
-        {Config.PetData},
-        {Item = petName, Type = "Pet", Player = player}
-    }
-
-    for _,params in pairs(payloads) do
-        pcall(function()
-            remote:FireServer(unpack(params))
-        end)
-    end
-
-    return true, "Spawn attempted with all methods"
-end
-
--- ===== USER INTERFACE =====
+-- 🔧 GUI Buatan
 local gui = Instance.new("ScreenGui")
-gui.Name = "UltimateSpawnerUI"
-gui.Parent = game:GetService("CoreGui")
+gui.Name = "GrowSpawnerGUI"
+gui.ResetOnSpawn = false
+pcall(function() gui.Parent = game.CoreGui end)
 
-local mainFrame = Instance.new("Frame")
-mainFrame.Size = UDim2.new(0, 350, 0, 250)
-mainFrame.Position = UDim2.new(0.5, -175, 0.5, -125)
-mainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-mainFrame.Active = true
-mainFrame.Draggable = true
-mainFrame.Parent = gui
+-- 🟦 Frame Utama
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 280, 0, 170)
+frame.Position = UDim2.new(0.5, -140, 0.5, -85)
+frame.BackgroundColor3 = Color3.fromRGB(33, 120, 200)
+frame.BorderSizePixel = 0
+frame.Active = true
+frame.Draggable = true
+frame.Parent = gui
+frame.Visible = false
 
-local inputBox = Instance.new("TextBox")
-inputBox.PlaceholderText = "Enter Pet Name/ID"
-inputBox.Size = UDim2.new(0.9, 0, 0, 35)
-inputBox.Position = UDim2.new(0.05, 0, 0.2, 0)
-inputBox.Parent = mainFrame
+-- 🔲 Tombol Toggle
+local toggle = Instance.new("TextButton")
+toggle.Size = UDim2.new(0, 140, 0, 30)
+toggle.Position = UDim2.new(0, 10, 0, 10)
+toggle.Text = "🐣 Open Spawner"
+toggle.BackgroundColor3 = Color3.fromRGB(0, 180, 255)
+toggle.TextColor3 = Color3.new(1,1,1)
+toggle.Parent = gui
 
-local spawnBtn = Instance.new("TextButton")
-spawnBtn.Text = "SUPER SPAWN"
-spawnBtn.Size = UDim2.new(0.9, 0, 0, 45)
-spawnBtn.Position = UDim2.new(0.05, 0, 0.5, 0)
-spawnBtn.Parent = mainFrame
-
-local statusLabel = Instance.new("TextLabel")
-statusLabel.Text = "System ready"
-statusLabel.Size = UDim2.new(0.9, 0, 0, 30)
-statusLabel.Position = UDim2.new(0.05, 0, 0.8, 0)
-statusLabel.Parent = mainFrame
-
--- ===== MAIN FUNCTIONALITY =====
-spawnBtn.MouseButton1Click:Connect(function()
-    local petInput = inputBox.Text
-    if petInput == "" then return end
-    
-    statusLabel.Text = "Processing..."
-    
-    local success, result = SpawnPet(petInput)
-    
-    if success then
-        statusLabel.Text = "Success! Check your inventory"
-        game.StarterGui:SetCore("SendNotification", {
-            Title = "SUCCESS",
-            Text = "Pet spawned using server exploit",
-            Duration = 5
-        })
-    else
-        statusLabel.Text = "Error: "..result
-        game.StarterGui:SetCore("SendNotification", {
-            Title = "ERROR",
-            Text = result,
-            Duration = 5,
-            Icon = "rbxassetid://57254793"
-        })
-    end
+toggle.MouseButton1Click:Connect(function()
+	frame.Visible = not frame.Visible
 end)
 
--- ===== AUTO-INIT =====
-statusLabel.Text = "Ultimate Spawner Loaded!"
+-- 🔘 Tab Pet & Seed
+local petTab = Instance.new("TextButton", frame)
+petTab.Size = UDim2.new(0.5, 0, 0, 30)
+petTab.Text = "Pet"
+petTab.BackgroundColor3 = Color3.fromRGB(0, 170, 255)
+petTab.TextColor3 = Color3.new(1,1,1)
+
+local seedTab = petTab:Clone()
+seedTab.Text = "Seed"
+seedTab.Position = UDim2.new(0.5, 0, 0, 0)
+seedTab.Parent = frame
+petTab.Parent = frame
+
+-- 📥 Input Nama
+local input = Instance.new("TextBox", frame)
+input.PlaceholderText = "Nama Pet / Seed"
+input.Position = UDim2.new(0, 10, 0, 50)
+input.Size = UDim2.new(1, -20, 0, 30)
+input.BackgroundColor3 = Color3.fromRGB(255,255,255)
+input.TextColor3 = Color3.fromRGB(0,0,0)
+input.Parent = frame
+
+-- 🟩 Tombol Spawn
+local spawnBtn = Instance.new("TextButton", frame)
+spawnBtn.Text = "Spawn"
+spawnBtn.Size = UDim2.new(1, -20, 0, 40)
+spawnBtn.Position = UDim2.new(0, 10, 0, 100)
+spawnBtn.BackgroundColor3 = Color3.fromRGB(0, 130, 255)
+spawnBtn.TextColor3 = Color3.new(1,1,1)
+spawnBtn.Font = Enum.Font.GothamBold
+spawnBtn.TextSize = 16
+spawnBtn.Parent = frame
+
+-- 🔄 Logic Tab
+local mode = "Pet"
+petTab.MouseButton1Click:Connect(function()
+	mode = "Pet"
+	input.PlaceholderText = "Nama Pet"
+end)
+seedTab.MouseButton1Click:Connect(function()
+	mode = "Seed"
+	input.PlaceholderText = "Nama Seed"
+end)
+
+-- ✅ Notifikasi
+local function notif(text)
+	pcall(function()
+		game.StarterGui:SetCore("SendNotification", {
+			Title = "Grow Spawner",
+			Text = text,
+			Duration = 2
+		})
+	end)
+end
+
+-- 🧬 Spawn
+spawnBtn.MouseButton1Click:Connect(function()
+	local itemName = input.Text
+	if itemName == "" then return end
+	local folder = rs:FindFirstChild(mode == "Pet" and "PetModels" or "Seeds")
+	if folder then
+		for _, v in pairs(folder:GetChildren()) do
+			if v.Name:lower() == itemName:lower() then
+				local clone = v:Clone()
+				clone.Parent = backpack
+				notif("Spawned: "..v.Name)
+				return
+			end
+		end
+	end
+	notif("Item not found!")
+end)
