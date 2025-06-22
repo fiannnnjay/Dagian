@@ -1,94 +1,106 @@
--- Load GUI Rayfield
-local Rayfield = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Rayfield/main/source"))()
+-- Load Rayfield UI
+local success, Rayfield = pcall(function()
+    return loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Rayfield/main/source"))()
+end)
 
+if not success then
+    warn("Rayfield UI gagal di-load.")
+    return
+end
+
+-- Buat Window
 local Window = Rayfield:CreateWindow({
-    Name = "Grow a Garden - Fruit Stealer",
-    LoadingTitle = "Loading...",
+    Name = "Grow a Garden - Fruit Steal",
+    LoadingTitle = "Delta Executor",
     ConfigurationSaving = {
         Enabled = false
     }
 })
 
+-- Variabel global
 local SelectedPlayer = nil
 
--- Tab
-local MainTab = Window:CreateTab("Fruit Stealer", 4483362458)
+-- Buat Tab
+local MainTab = Window:CreateTab("Steal Menu", 4483362458)
 
--- Pilih player
-MainTab:CreateDropdown({
-    Name = "Pilih Target Player",
-    Options = {},
+-- Dropdown: Player List
+local dropdown = MainTab:CreateDropdown({
+    Name = "Pilih Player Target",
+    Options = {}, -- otomatis diisi
     CurrentOption = "",
-    Flag = "SelectedTarget",
     Callback = function(Value)
         SelectedPlayer = Value
     end
 })
 
--- Tombol STEAL
+-- Tombol Steal
 MainTab:CreateButton({
-    Name = "STEAL Buah dari Player!",
+    Name = "Steal Buah dari Player",
     Callback = function()
+        local Remote = game:GetService("ReplicatedStorage"):FindFirstChild("RemoteEvent")
+        if not Remote then
+            Rayfield:Notify({
+                Title = "RemoteEvent Tidak Ditemukan",
+                Content = "Script tidak bisa jalan. RemoteEvent hilang.",
+                Duration = 4
+            })
+            return
+        end
+
         if not SelectedPlayer then
             Rayfield:Notify({
                 Title = "Player Kosong",
-                Content = "Pilih target player dulu!",
+                Content = "Pilih player dulu.",
                 Duration = 3
             })
             return
         end
 
-        local Target = game.Players:FindFirstChild(SelectedPlayer)
-        if not Target then
+        local target = game.Players:FindFirstChild(SelectedPlayer)
+        if not target then
             Rayfield:Notify({
-                Title = "Player Tidak Ditemukan",
-                Content = "Mungkin player sudah keluar.",
+                Title = "Player Ga Ketemu",
+                Content = "Player keluar dari server.",
                 Duration = 3
             })
             return
         end
 
-        local Remote = game:GetService("ReplicatedStorage"):WaitForChild("RemoteEvent")
-
-        -- Langkah 1: Teleport player target ke kita (paksa posisi server)
+        -- Teleport paksa
         pcall(function()
-            Target.Character:MoveTo(game.Players.LocalPlayer.Character.HumanoidRootPart.Position)
+            target.Character:MoveTo(game.Players.LocalPlayer.Character.HumanoidRootPart.Position)
         end)
 
-        -- Langkah 2: Spam gift semua buah dari backpack-nya
-        local function stealAllFruit()
-            for i = 1, 10 do -- Spam 10x (bisa ditambah)
-                Remote:FireServer({
-                    ["Type"] = "Gift",
-                    ["Data"] = {
-                        ["Type"] = "Fruit",
-                        ["Receiver"] = game.Players.LocalPlayer,
-                        ["Sender"] = Target
-                    }
-                })
-                task.wait(0.1)
-            end
+        -- Kirim gift palsu
+        for i = 1, 8 do
+            Remote:FireServer({
+                ["Type"] = "Gift",
+                ["Data"] = {
+                    ["Type"] = "Fruit",
+                    ["Receiver"] = game.Players.LocalPlayer,
+                    ["Sender"] = target
+                }
+            })
+            task.wait(0.1)
         end
 
-        stealAllFruit()
-
         Rayfield:Notify({
-            Title = "Sukses?",
-            Content = "Request steal buah sudah dikirim. Cek backpack kamu.",
+            Title = "Selesai!",
+            Content = "Steal buah sudah dikirim!",
             Duration = 3
         })
     end
 })
 
--- Update daftar player terus-menerus
+-- Isi Player List terus menerus
 task.spawn(function()
     while task.wait(2) do
-        local list = {}
+        local names = {}
         for _, plr in pairs(game.Players:GetPlayers()) do
             if plr ~= game.Players.LocalPlayer then
-                table.insert(list, plr.Name)
+                table.insert(names, plr.Name)
             end
         end
-        MainTab.Flags["SelectedTarget"]:SetOptions(list)
+        dropdown:SetOptions(names)
     end
 end)
