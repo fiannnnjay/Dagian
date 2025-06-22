@@ -1,74 +1,94 @@
-local player = game:GetService("Players").LocalPlayer
-local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-gui.Name = "PetDupeGUI"
+-- Load GUI Rayfield
+local Rayfield = loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Rayfield/main/source"))()
 
-local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 260, 0, 160)
-frame.Position = UDim2.new(0.5, -130, 0.5, -80)
-frame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
-frame.Active = true
-frame.Draggable = true
+local Window = Rayfield:CreateWindow({
+    Name = "Grow a Garden - Fruit Stealer",
+    LoadingTitle = "Loading...",
+    ConfigurationSaving = {
+        Enabled = false
+    }
+})
 
-local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1, 0, 0, 30)
-title.Text = "🐾 DUPLICATE PET"
-title.TextColor3 = Color3.fromRGB(255, 255, 0)
-title.BackgroundTransparency = 1
-title.TextScaled = true
-title.Font = Enum.Font.SourceSansBold
+local SelectedPlayer = nil
 
-local petInfo = Instance.new("TextLabel", frame)
-petInfo.Size = UDim2.new(1, -20, 0, 60)
-petInfo.Position = UDim2.new(0, 10, 0, 35)
-petInfo.Text = "No Pet Detected"
-petInfo.TextWrapped = true
-petInfo.BackgroundTransparency = 1
-petInfo.TextColor3 = Color3.new(1,1,1)
-petInfo.TextSize = 16
-petInfo.Font = Enum.Font.SourceSans
+-- Tab
+local MainTab = Window:CreateTab("Fruit Stealer", 4483362458)
 
-local dupBtn = Instance.new("TextButton", frame)
-dupBtn.Size = UDim2.new(1, -20, 0, 40)
-dupBtn.Position = UDim2.new(0, 10, 0, 105)
-dupBtn.Text = "DUPLICATE NOW"
-dupBtn.BackgroundColor3 = Color3.fromRGB(255, 200, 0)
-dupBtn.TextColor3 = Color3.new(0,0,0)
-dupBtn.Visible = false
+-- Pilih player
+MainTab:CreateDropdown({
+    Name = "Pilih Target Player",
+    Options = {},
+    CurrentOption = "",
+    Flag = "SelectedTarget",
+    Callback = function(Value)
+        SelectedPlayer = Value
+    end
+})
 
--- Pet Detection
-game:GetService("RunService").RenderStepped:Connect(function()
-	local char = player.Character
-	if not char then return end
+-- Tombol STEAL
+MainTab:CreateButton({
+    Name = "STEAL Buah dari Player!",
+    Callback = function()
+        if not SelectedPlayer then
+            Rayfield:Notify({
+                Title = "Player Kosong",
+                Content = "Pilih target player dulu!",
+                Duration = 3
+            })
+            return
+        end
 
-	local tool = char:FindFirstChildOfClass("Tool")
-	if tool then
-		local name = tool.Name
-		local size = "?"
-		local age = "?"
+        local Target = game.Players:FindFirstChild(SelectedPlayer)
+        if not Target then
+            Rayfield:Notify({
+                Title = "Player Tidak Ditemukan",
+                Content = "Mungkin player sudah keluar.",
+                Duration = 3
+            })
+            return
+        end
 
-		for _, child in pairs(tool:GetChildren()) do
-			if child:IsA("NumberValue") or child:IsA("IntValue") then
-				if child.Name:lower():find("size") or child.Name:lower():find("weight") then
-					size = tostring(child.Value)
-				elseif child.Name:lower():find("age") then
-					age = tostring(child.Value)
-				end
-			end
-		end
+        local Remote = game:GetService("ReplicatedStorage"):WaitForChild("RemoteEvent")
 
-		petInfo.Text = "Pet: " .. name .. "\nSize: " .. size .. " KG\nAge: " .. age
-		dupBtn.Visible = true
-	else
-		petInfo.Text = "No Pet Detected"
-		dupBtn.Visible = false
-	end
-end)
+        -- Langkah 1: Teleport player target ke kita (paksa posisi server)
+        pcall(function()
+            Target.Character:MoveTo(game.Players.LocalPlayer.Character.HumanoidRootPart.Position)
+        end)
 
--- Dupe Pet
-dupBtn.MouseButton1Click:Connect(function()
-	local tool = player.Character and player.Character:FindFirstChildOfClass("Tool")
-	if tool then
-		local clone = tool:Clone()
-		clone.Parent = player.Backpack
-	end
+        -- Langkah 2: Spam gift semua buah dari backpack-nya
+        local function stealAllFruit()
+            for i = 1, 10 do -- Spam 10x (bisa ditambah)
+                Remote:FireServer({
+                    ["Type"] = "Gift",
+                    ["Data"] = {
+                        ["Type"] = "Fruit",
+                        ["Receiver"] = game.Players.LocalPlayer,
+                        ["Sender"] = Target
+                    }
+                })
+                task.wait(0.1)
+            end
+        end
+
+        stealAllFruit()
+
+        Rayfield:Notify({
+            Title = "Sukses?",
+            Content = "Request steal buah sudah dikirim. Cek backpack kamu.",
+            Duration = 3
+        })
+    end
+})
+
+-- Update daftar player terus-menerus
+task.spawn(function()
+    while task.wait(2) do
+        local list = {}
+        for _, plr in pairs(game.Players:GetPlayers()) do
+            if plr ~= game.Players.LocalPlayer then
+                table.insert(list, plr.Name)
+            end
+        end
+        MainTab.Flags["SelectedTarget"]:SetOptions(list)
+    end
 end)
