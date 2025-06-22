@@ -1,106 +1,108 @@
--- Load Rayfield UI
-local success, Rayfield = pcall(function()
-    return loadstring(game:HttpGet("https://raw.githubusercontent.com/shlexware/Rayfield/main/source"))()
-end)
+-- GUI manual buatan sendiri (no Rayfield)
+local ScreenGui = Instance.new("ScreenGui", game.CoreGui)
+ScreenGui.Name = "StealGui"
 
-if not success then
-    warn("Rayfield UI gagal di-load.")
-    return
-end
+local Frame = Instance.new("Frame", ScreenGui)
+Frame.Size = UDim2.new(0, 250, 0, 150)
+Frame.Position = UDim2.new(0.05, 0, 0.2, 0)
+Frame.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+Frame.BorderSizePixel = 0
+Frame.Active = true
+Frame.Draggable = true
 
--- Buat Window
-local Window = Rayfield:CreateWindow({
-    Name = "Grow a Garden - Fruit Steal",
-    LoadingTitle = "Delta Executor",
-    ConfigurationSaving = {
-        Enabled = false
-    }
-})
+local Title = Instance.new("TextLabel", Frame)
+Title.Size = UDim2.new(1, 0, 0, 30)
+Title.Text = "Steal Fruit GUI"
+Title.TextColor3 = Color3.new(1,1,1)
+Title.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+Title.Font = Enum.Font.SourceSansBold
+Title.TextSize = 18
 
--- Variabel global
+local Dropdown = Instance.new("TextButton", Frame)
+Dropdown.Size = UDim2.new(1, -20, 0, 30)
+Dropdown.Position = UDim2.new(0, 10, 0, 40)
+Dropdown.Text = "Pilih Player"
+Dropdown.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
+Dropdown.TextColor3 = Color3.new(1,1,1)
+Dropdown.Font = Enum.Font.SourceSans
+Dropdown.TextSize = 16
+
+local PlayerList = {}
 local SelectedPlayer = nil
 
--- Buat Tab
-local MainTab = Window:CreateTab("Steal Menu", 4483362458)
+local Button = Instance.new("TextButton", Frame)
+Button.Size = UDim2.new(1, -20, 0, 30)
+Button.Position = UDim2.new(0, 10, 0, 80)
+Button.Text = "STEAL FRUIT"
+Button.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
+Button.TextColor3 = Color3.new(1,1,1)
+Button.Font = Enum.Font.SourceSansBold
+Button.TextSize = 16
 
--- Dropdown: Player List
-local dropdown = MainTab:CreateDropdown({
-    Name = "Pilih Player Target",
-    Options = {}, -- otomatis diisi
-    CurrentOption = "",
-    Callback = function(Value)
-        SelectedPlayer = Value
+-- Update Player List
+local function updatePlayerList()
+    PlayerList = {}
+    for _, plr in pairs(game.Players:GetPlayers()) do
+        if plr ~= game.Players.LocalPlayer then
+            table.insert(PlayerList, plr.Name)
+        end
     end
-})
+end
 
--- Tombol Steal
-MainTab:CreateButton({
-    Name = "Steal Buah dari Player",
-    Callback = function()
-        local Remote = game:GetService("ReplicatedStorage"):FindFirstChild("RemoteEvent")
-        if not Remote then
-            Rayfield:Notify({
-                Title = "RemoteEvent Tidak Ditemukan",
-                Content = "Script tidak bisa jalan. RemoteEvent hilang.",
-                Duration = 4
-            })
-            return
-        end
+updatePlayerList()
 
-        if not SelectedPlayer then
-            Rayfield:Notify({
-                Title = "Player Kosong",
-                Content = "Pilih player dulu.",
-                Duration = 3
-            })
-            return
-        end
+-- Saat klik Dropdown -> Ganti target player
+Dropdown.MouseButton1Click:Connect(function()
+    updatePlayerList()
+    if #PlayerList == 0 then
+        Dropdown.Text = "Ga Ada Player"
+        return
+    end
 
-        local target = game.Players:FindFirstChild(SelectedPlayer)
-        if not target then
-            Rayfield:Notify({
-                Title = "Player Ga Ketemu",
-                Content = "Player keluar dari server.",
-                Duration = 3
-            })
-            return
-        end
+    local index = table.find(PlayerList, SelectedPlayer) or 0
+    index = (index % #PlayerList) + 1
+    SelectedPlayer = PlayerList[index]
+    Dropdown.Text = "Target: " .. SelectedPlayer
+end)
 
-        -- Teleport paksa
-        pcall(function()
-            target.Character:MoveTo(game.Players.LocalPlayer.Character.HumanoidRootPart.Position)
-        end)
+-- Saat klik STEAL
+Button.MouseButton1Click:Connect(function()
+    if not SelectedPlayer then
+        Button.Text = "Pilih Player Dulu"
+        return
+    end
 
-        -- Kirim gift palsu
-        for i = 1, 8 do
-            Remote:FireServer({
-                ["Type"] = "Gift",
-                ["Data"] = {
-                    ["Type"] = "Fruit",
-                    ["Receiver"] = game.Players.LocalPlayer,
-                    ["Sender"] = target
-                }
-            })
-            task.wait(0.1)
-        end
+    local Target = game.Players:FindFirstChild(SelectedPlayer)
+    if not Target then
+        Button.Text = "Player Keluar"
+        return
+    end
 
-        Rayfield:Notify({
-            Title = "Selesai!",
-            Content = "Steal buah sudah dikirim!",
-            Duration = 3
+    -- Ambil remote game
+    local Remote = game:GetService("ReplicatedStorage"):FindFirstChild("RemoteEvent")
+    if not Remote then
+        Button.Text = "Remote Tidak Ada"
+        return
+    end
+
+    -- Teleport paksa target
+    pcall(function()
+        Target.Character:MoveTo(game.Players.LocalPlayer.Character.HumanoidRootPart.Position)
+    end)
+
+    -- Kirim Gift Buah Palsu
+    for i = 1, 8 do
+        Remote:FireServer({
+            ["Type"] = "Gift",
+            ["Data"] = {
+                ["Type"] = "Fruit",
+                ["Receiver"] = game.Players.LocalPlayer,
+                ["Sender"] = Target
+            }
         })
+        task.wait(0.1)
     end
-})
 
--- Isi Player List terus menerus
-task.spawn(function()
-    while task.wait(2) do
-        local names = {}
-        for _, plr in pairs(game.Players:GetPlayers()) do
-            if plr ~= game.Players.LocalPlayer then
-                table.insert(names, plr.Name)
-            end
-        end
-        dropdown:SetOptions(names)
-    end
+    Button.Text = "Selesai!"
+    task.delay(2, function() Button.Text = "STEAL FRUIT" end)
 end)
