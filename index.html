@@ -2,7 +2,7 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Dashboard RansomwarePIN Rekening</title>
+  <title>Dashboard MalwarePIN Rekening</title>
   <style>
     body {
       background: #001f2e;
@@ -58,7 +58,7 @@
   <h2>Dashboard RansomwarePIN Rekening</h2>
   <p><b>Nama:</b> dfgantengg</p>
   <p><b>No Rek:</b> 1234567890</p>
-  <p><b>Saldo:</b> Rp 2.000.000</p>
+  <p><b>Saldo:</b> <span id="saldo">Rp 2.000.000</span></p>
   <input type="password" id="pin" placeholder="PIN Kedua"><br>
   <button onclick="curiSaldo()">Konfirmasi</button>
 </div>
@@ -86,8 +86,14 @@ function curiSaldo() {
     alert('PIN tidak valid!');
     return;
   }
+
+  // Ganti saldo jadi Rp 0
+  document.getElementById('saldo').textContent = "Rp 0";
+
+  // Lanjutkan tampilan upload simulasi
   document.getElementById('formPin').classList.add('hidden');
   document.getElementById('hasil').classList.remove('hidden');
+
   setTimeout(() => {
     document.getElementById('unduh').classList.remove('hidden');
   }, 3000);
