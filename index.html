@@ -2,103 +2,78 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <title>Dashboard MalwarePIN Rekening</title>
+  <title>Wajah Scan & Face Wash AI</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
   <style>
     body {
-      background: #001f2e;
-      color: #fff;
       font-family: Arial, sans-serif;
+      background: #f0f0f0;
       text-align: center;
-      padding-top: 50px;
+      padding: 30px;
     }
-    .dashboard, .hasil, .unduh {
-      background: #022b3a;
-      margin: auto;
+    canvas, video {
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+    #result {
+      margin-top: 20px;
+      background: white;
       padding: 20px;
       border-radius: 10px;
-      width: 300px;
-      box-shadow: 0 0 10px #00ffcc;
-    }
-    input {
-      padding: 10px;
-      font-size: 16px;
-      width: 90%;
-      border-radius: 5px;
-      border: none;
-      margin-top: 10px;
-    }
-    button {
-      padding: 10px 20px;
-      background: #00ccff;
-      color: black;
-      border: none;
-      border-radius: 5px;
-      margin-top: 15px;
-      cursor: pointer;
-    }
-    pre {
-      text-align: left;
-      color: #00ff88;
-      font-size: 14px;
-      background: black;
-      padding: 10px;
-      border-radius: 5px;
-    }
-    .hidden { display: none; }
-    .unduh button {
-      background: red;
-      color: white;
-      margin-top: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      display: none;
     }
   </style>
 </head>
 <body>
 
-<div class="dashboard" id="formPin">
-  <h2>Dashboard RansomwarePIN Rekening</h2>
-  <p><b>Nama:</b> dfgantengg</p>
-  <p><b>No Rek:</b> 1234567890</p>
-  <p><b>Saldo:</b> <span id="saldo">Rp 2.000.000</span></p>
-  <input type="password" id="pin" placeholder="PIN Kedua"><br>
-  <button onclick="curiSaldo()">Konfirmasi</button>
-</div>
+  <h1>Smart Face Scanner</h1>
+  <p>Deteksi wajahmu dan rekomendasi face wash</p>
+  <video id="video" width="320" height="240" autoplay muted></video>
+  <div id="result"></div>
 
-<div class="hasil hidden" id="hasil">
-  <h2>🛰️ Mengunggah Data...</h2>
-  <pre>
-[*] Terhubung ke server: leakhost.ru
-[*] Mengambil info rekening...
-[*] Mengenkripsi data...
-[*] Mengunggah ke IP: 188.45.1.22
-[✓] Data berhasil dikirim.
-[✓] Saldo telah dikirim ke akun Dana Anda!
-  </pre>
-</div>
+  <script>
+    const video = document.getElementById('video');
+    const result = document.getElementById('result');
 
-<div class="unduh hidden" id="unduh">
-  <button onclick="alert('Bukti bocor diunduh (simulasi).')">📁 Unduh Bukti Bocor</button>
-</div>
+    Promise.all([
+      faceapi.nets.tinyFaceDetector.loadFromUri('https://cdn.jsdelivr.net/npm/face-api.js/models'),
+    ]).then(startVideo);
 
-<script>
-function curiSaldo() {
-  const pin = document.getElementById('pin').value;
-  if (pin.length < 4) {
-    alert('PIN tidak valid!');
-    return;
-  }
+    function startVideo() {
+      navigator.mediaDevices.getUserMedia({ video: true })
+        .then(stream => {
+          video.srcObject = stream;
+        })
+        .catch(err => console.error("Gagal akses kamera:", err));
+    }
 
-  // Ganti saldo jadi Rp 0
-  document.getElementById('saldo').textContent = "Rp 0";
+    video.addEventListener('play', () => {
+      const canvas = faceapi.createCanvasFromMedia(video);
+      document.body.append(canvas);
+      const displaySize = { width: video.width, height: video.height };
+      faceapi.matchDimensions(canvas, displaySize);
 
-  // Lanjutkan tampilan upload simulasi
-  document.getElementById('formPin').classList.add('hidden');
-  document.getElementById('hasil').classList.remove('hidden');
+      setInterval(async () => {
+        const detections = await faceapi.detectAllFaces(video, new faceapi.TinyFaceDetectorOptions());
+        const resized = faceapi.resizeResults(detections, displaySize);
+        canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+        faceapi.draw.drawDetections(canvas, resized);
 
-  setTimeout(() => {
-    document.getElementById('unduh').classList.remove('hidden');
-  }, 3000);
-}
-</script>
+        if (detections.length > 0) {
+          result.style.display = "block";
+          result.innerHTML = `
+            <h2>Wajah Terdeteksi ✅</h2>
+            <p><strong>Simulasi Kondisi:</strong> Jerawat Sedang</p>
+            <p><strong>Rekomendasi:</strong> Gunakan face wash dengan <b>Niacinamide (Vitamin B3)</b> + <b>Salicylic Acid</b></p>
+          `;
+        } else {
+          result.style.display = "none";
+        }
+
+      }, 1000);
+    });
+  </script>
 
 </body>
 </html>
