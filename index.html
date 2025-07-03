@@ -1,0 +1,38 @@
+
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <title>Smart Face Scanner</title>
+  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
+  <script defer src="script.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f0f0;
+      text-align: center;
+      padding: 30px;
+    }
+    canvas, video {
+      border-radius: 10px;
+      margin-top: 20px;
+    }
+    #result {
+      margin-top: 20px;
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.2);
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Smart Face Scanner</h1>
+  <p>Deteksi wajahmu dan rekomendasi face wash</p>
+  <video id="video" width="320" height="240" autoplay muted></video>
+  <div id="result"></div>
+
+</body>
+</html>
