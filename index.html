@@ -1,38 +1,91 @@
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <title>Smart Face Scanner</title>
-  <script defer src="https://cdn.jsdelivr.net/npm/face-api.js"></script>
-  <script defer src="script.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GPS OLED View</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f0f0f0;
+      margin: 0;
+      background: black;
+      color: white;
+      font-family: monospace;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .screen {
+      background: #111;
+      border: 2px solid #333;
+      padding: 20px 30px;
+      border-radius: 12px;
+      width: 260px;
+      height: 90px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
       text-align: center;
-      padding: 30px;
     }
-    canvas, video {
-      border-radius: 10px;
-      margin-top: 20px;
+
+    .label {
+      font-size: 14px;
+      color: #ccc;
     }
-    #result {
-      margin-top: 20px;
-      background: white;
-      padding: 20px;
-      border-radius: 10px;
-      box-shadow: 0 0 10px rgba(0,0,0,0.2);
-      display: none;
+
+    .lokasi {
+      margin-top: 8px;
+      font-size: 13px;
+      color: #00ffcc;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
     }
   </style>
 </head>
 <body>
 
-  <h1>Smart Face Scanner</h1>
-  <p>Deteksi wajahmu dan rekomendasi face wash</p>
-  <video id="video" width="320" height="240" autoplay muted></video>
-  <div id="result"></div>
+  <div class="screen">
+    <div class="label">Lokasi Kamu Sekarang:</div>
+    <div class="lokasi" id="lokasi">Mendeteksi lokasi...</div>
+  </div>
+
+  <script>
+    const lokasi = document.getElementById("lokasi");
+
+    function reverseGeocode(lat, lon) {
+      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
+        .then(res => res.json())
+        .then(data => {
+          const jalan = data.address.road || data.display_name || "Lokasi tidak diketahui";
+          lokasi.textContent = jalan;
+        })
+        .catch(err => {
+          lokasi.textContent = "Gagal mendeteksi lokasi";
+        });
+    }
+
+    function updatePos(pos) {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      reverseGeocode(lat, lon);
+    }
+
+    function handleError(error) {
+      lokasi.textContent = "GPS Error: " + error.message;
+    }
+
+    if ("geolocation" in navigator) {
+      navigator.geolocation.watchPosition(updatePos, handleError, {
+        enableHighAccuracy: true,
+        maximumAge: 1000,
+        timeout: 10000
+      });
+    } else {
+      lokasi.textContent = "Geolocation tidak tersedia.";
+    }
+  </script>
 
 </body>
 </html>
