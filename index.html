@@ -12,17 +12,18 @@
       font-family: monospace;
       display: flex;
       justify-content: center;
-      align-items: center;
+      align-items: flex-end;
       height: 100vh;
+      padding-bottom: 40px;
     }
 
     .screen {
       background: #111;
       border: 2px solid #333;
-      padding: 20px 30px;
+      padding: 16px 20px;
       border-radius: 12px;
-      width: 260px;
-      height: 90px;
+      width: 280px;
+      min-height: 80px;
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -32,15 +33,14 @@
     .label {
       font-size: 14px;
       color: #ccc;
+      margin-bottom: 6px;
     }
 
     .lokasi {
-      margin-top: 8px;
       font-size: 13px;
       color: #00ffcc;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
+      word-wrap: break-word;
+      white-space: normal;
     }
   </style>
 </head>
@@ -58,10 +58,12 @@
       fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}`)
         .then(res => res.json())
         .then(data => {
-          const jalan = data.address.road || data.display_name || "Lokasi tidak diketahui";
-          lokasi.textContent = jalan;
+          const road = data.address.road || '';
+          const city = data.address.city || data.address.town || data.address.village || '';
+          const state = data.address.state || '';
+          lokasi.textContent = `${road}, ${city}, ${state}`;
         })
-        .catch(err => {
+        .catch(() => {
           lokasi.textContent = "Gagal mendeteksi lokasi";
         });
     }
@@ -76,14 +78,26 @@
       lokasi.textContent = "GPS Error: " + error.message;
     }
 
-    if ("geolocation" in navigator) {
+    // Check permission & auto run without click
+    if (navigator.permissions) {
+      navigator.permissions.query({ name: "geolocation" }).then(result => {
+        if (result.state === "granted" || result.state === "prompt") {
+          navigator.geolocation.watchPosition(updatePos, handleError, {
+            enableHighAccuracy: true,
+            maximumAge: 1000,
+            timeout: 10000
+          });
+        } else {
+          lokasi.textContent = "Izin lokasi ditolak";
+        }
+      });
+    } else {
+      // fallback
       navigator.geolocation.watchPosition(updatePos, handleError, {
         enableHighAccuracy: true,
         maximumAge: 1000,
         timeout: 10000
       });
-    } else {
-      lokasi.textContent = "Geolocation tidak tersedia.";
     }
   </script>
 
