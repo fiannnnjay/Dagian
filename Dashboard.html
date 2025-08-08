@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<title>Dashboard – WA Report Bot</title>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#0f0f23;--card:#1e1e38;--success:#00ff88;--danger:#ff3e6c;--accent:#00d9ff}
+  body{margin:0;font-family:Poppins;background:var(--bg);color:#fff;display:flex;align-items:center;justify-content:center;min-height:100vh}
+  .card{background:var(--card);padding:30px;border-radius:14px;box-shadow:0 0 25px var(--accent);max-width:420px;width:100%}
+  input,select,button{width:100%;padding:12px;margin:8px 0;border:none;border-radius:8px;font-size:15px}
+  input{background:#2a2a4a;color:#fff}
+  button{background:var(--accent);color:#000;font-weight:600;cursor:pointer}
+  button:disabled{opacity:.5;cursor:not-allowed}
+  .dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin:2px;background:#555}
+  .dot.ok{background:var(--success);box-shadow:0 0 6px var(--success)}
+  .dot.err{background:var(--danger);box-shadow:0 0 6px var(--danger)}
+  .hidden{display:none}
+  #progressBox{max-height:250px;overflow-y:auto;margin-top:10px;background:#15152b;border-radius:10px;padding:10px}
+</style>
+</head>
+<body>
+<div class="card">
+  <h2>⚡ WA Report Tools</h2>
+
+  <!-- STEP 1 -->
+  <label>Nomor WhatsApp kamu (62xx)</label>
+  <input id="myPhone" type="tel" placeholder="6281234567890">
+  <button id="btnPair" onclick="getPairing()">Dapatkan Kode Pairing</button>
+  <p id="pairInfo"></p>
+
+  <!-- STEP 2 -->
+  <label>Jumlah Report</label>
+  <select id="countSelect">
+    <option value="50">50</option><option value="100">100</option><option value="200">200</option>
+    <option value="custom">Custom</option>
+  </select>
+  <input id="customCount" type="number" min="1" max="1000" class="hidden" placeholder="Jumlah">
+  <label>Nomor Target</label>
+  <input id="target" placeholder="Nomor yang di-report">
+  <button id="btnStart" onclick="startReport()">Mulai Report</button>
+  <button id="btnStop" onclick="stopReport()" class="hidden" style="background:var(--danger)">STOP</button>
+
+  <!-- PROGRESS -->
+  <div id="progressBox" class="hidden">
+    <div id="progress"></div>
+    <p id="stats"></p>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/whatsapp-web.js@1.23.0/dist/index.min.js"></script>
+<script>
+const API = "/api/wa";
+let client, ready=false, abort=false;
+
+/* redirect kalau belum login */
+if(!localStorage.getItem("loggedIn")) location.href = "login.html";
+
+/* autoselect */
+document.getElementById('countSelect').addEventListener('change',e=>{
+  document.getElementById('customCount').classList.toggle('hidden', e.target.value!=="custom");
+});
+
+/* ---------- PAIRING ---------- */
+function getPairing(){
+  const phone = document.getElementById('myPhone').value.trim();
+  if(!phone){ alert("Isi nomor WA kamu"); return; }
+  document.getElementById('btnPair').disabled = true;
+  document.getElementById('pairInfo').innerText = "Loading...";
+
+  if(client) client.destroy();
+  client = new WhatsAppWeb.Client({
+    authStrategy: new WhatsAppWeb.LocalAuth({dataPath:"/tmp"}),
+    puppeteer:{headless:true,args:["--no-sandbox","--disable-setuid-sandbox"]}
+  });
+
+  client.on('qr',()=>{});
+  client.on('ready',()=>{
+    ready=true;
+    document.getElementById('btnPair').disabled=false;
+    document.getElementById('pairInfo').innerHTML="<span style='color:var(--success)'>✅ WhatsApp sudah linked</span>";
+  });
+  client.on('disconnected',()=>{ ready=false; client=null; });
+
+  client.initialize().then(()=>{
+    client.requestPairingCode(phone).then(code=>{
+      document.getElementById('pairInfo').innerHTML=`Kode: <strong style="color:var(--accent)">${code}</strong><br>Buka WhatsApp → Linked devices → Link with phone number`;
+    });
+  });
+}
+
+/* ---------- REPORT ---------- */
+function stopReport(){ abort=true; }
+
+async function startReport(){
+  if(!ready){ alert("WhatsApp belum linked"); return; }
+
+  const phone=document.getElementById('myPhone').value.trim();
+  const target=document.getElementById('target').value.trim();
+  const sel=document.getElementById('countSelect').value;
+  const total = sel==="custom" ? parseInt(document.getElementById('customCount').value||0) : parseInt(sel);
+  if(!target || total<1 || total>1000){ alert("Input tidak valid"); return; }
+
+  document.getElementById('progressBox').classList.remove('hidden');
+  document.getElementById('progress').innerHTML='';
+  document.getElementById('stats').innerText='';
+  document.getElementById('btnStart').classList.add('hidden');
+  document.getElementById('btnStop').classList.remove('hidden');
+
+  for(let i=0;i<total;i++){
+    const d=document.createElement('span'); d.className='dot'; d.id='d'+i;
+    document.getElementById('progress').appendChild(d);
+  }
+
+  let ok=0,fail=0; abort=false;
+  for(let i=0;i<total;i++){
+    if(abort){ alert("Report dihentikan"); break; }
+    const msg=`📊 Report #${i+1} untuk nomor ${target}`;
+    try{
+      await client.sendMessage(`${phone}@c.us`,msg);
+      document.getElementById('d'+i).classList.add('ok'); ok++;
+    }catch(e){
+      document.getElementById('d'+i).classList.add('err'); fail++;
+    }
+    document.getElementById('stats').innerText=`Sukses:${ok}  Gagal:${fail}`;
+    document.getElementById('progress').scrollTop=document.getElementById('progress').scrollHeight;
+    await new Promise(r=>setTimeout(r,3000));
+  }
+  document.getElementById('btnStart').classList.remove('hidden');
+  document.getElementById('btnStop').classList.add('hidden');
+  alert("Report selesai!");
+}
+</script>
+</body>
+</html>
