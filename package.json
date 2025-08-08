@@ -1,0 +1,8 @@
+{
+  "name": "wa-report-bot",
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "whatsapp-web.js": "^1.23.0"
+  }
+}
