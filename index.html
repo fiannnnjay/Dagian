@@ -1,254 +1,193 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>GPS OLED View</title>
+  <meta charset="UTF-8"/>
+  <title>WA Report Tools</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1"/>
   <style>
-    body {
-      margin: 0;
-      background: black;
-      color: white;
-      font-family: 'Courier New', monospace;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
+    :root{
+      --success:#22c55e;
+      --danger:#ef4444;
+      --primary:#3b82f6;
     }
-
-    .screen {
-      background: #111;
-      border: 2px solid #333;
-      padding: 20px;
-      border-radius: 16px;
-      width: 300px;
-      min-height: 120px;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      text-align: center;
-      box-shadow: 0 0 20px rgba(0, 255, 200, 0.1);
+    body{
+      margin:0;
+      font-family:system-ui,sans-serif;
+      background:#f5f5f5;
+      display:flex;
+      height:100vh;
+      align-items:center;
+      justify-content:center;
     }
-
-    .label {
-      font-size: 16px;
-      color: #00ffcc;
-      margin-bottom: 10px;
-      text-transform: uppercase;
-      letter-spacing: 1px;
+    .card{
+      background:#fff;
+      padding:30px 40px;
+      border-radius:12px;
+      box-shadow:0 2px 12px rgba(0,0,0,.15);
+      width:100%;
+      max-width:420px;
     }
-
-    .lokasi {
-      font-size: 14px;
-      color: #fff;
-      word-wrap: break-word;
-      white-space: normal;
-      line-height: 1.4;
-      margin-bottom: 10px;
-      min-height: 60px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+    h2{margin-top:0}
+    input,select,button{
+      width:100%;
+      padding:10px;
+      margin:8px 0;
+      border:1px solid #bbb;
+      border-radius:6px;
+      font-size:15px;
     }
-
-    .coordinates {
-      font-size: 12px;
-      color: #00ffcc;
-      margin-top: 8px;
-      opacity: 0.8;
+    button{background:var(--primary);color:#fff;border:none;cursor:pointer}
+    button:disabled{opacity:.6;cursor:not-allowed}
+    #progress{
+      display:flex;
+      flex-wrap:wrap;
+      gap:4px;
+      margin-top:12px;
     }
-
-    .status {
-      font-size: 11px;
-      color: #888;
-      margin-top: 10px;
-      border-top: 1px solid #222;
-      padding-top: 8px;
+    .dot{
+      width:14px;
+      height:14px;
+      border-radius:50%;
+      background:#e5e7eb;
     }
-
-    .loading {
-      display: inline-block;
-      width: 16px;
-      height: 16px;
-      border: 2px solid #00ffcc;
-      border-radius: 50%;
-      border-top-color: transparent;
-      animation: spin 1s linear infinite;
-      margin-right: 8px;
-      vertical-align: middle;
-    }
-
-    @keyframes spin {
-      100% { transform: rotate(360deg); }
-    }
+    .dot.ok{background:var(--success)}
+    .dot.err{background:var(--danger)}
+    .hidden{display:none}
   </style>
 </head>
 <body>
 
-  <div class="screen">
-    <div class="label">Lokasi GPS Real-time</div>
-    <div class="lokasi" id="lokasi">
-      <span class="loading"></span> Mendeteksi lokasi...
-    </div>
-    <div class="coordinates" id="coordinates"></div>
-    <div class="status" id="status">Status: Menunggu pembaruan GPS...</div>
-  </div>
+<!-- LOGIN -->
+<div id="loginPage" class="card">
+  <h2>Login</h2>
+  <input id="pwd" type="password" placeholder="Password">
+  <button onclick="login()">Masuk</button>
+</div>
 
-  <script>
-    const lokasi = document.getElementById("lokasi");
-    const coordinates = document.getElementById("coordinates");
-    const statusElement = document.getElementById("status");
-    let watchId = null;
-    let lastUpdate = null;
+<!-- REPORT TOOLS -->
+<div id="reportPage" class="card hidden">
+  <h2>Report Tools</h2>
 
-    function updateStatus(message, isError = false) {
-      statusElement.textContent = `Status: ${message}`;
-      statusElement.style.color = isError ? '#ff5555' : '#888';
-    }
+  <label>Nomor WhatsApp kamu (62xx)</label>
+  <input id="myPhone" type="tel" placeholder="6281234567890">
 
-    function reverseGeocode(lat, lon) {
-      updateStatus("Mengambil data alamat...");
-      
-      // First try with detailed address
-      fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&addressdetails=1&zoom=18`)
-        .then(res => {
-          if (!res.ok) throw new Error("Server error");
-          return res.json();
-        })
-        .then(data => {
-          let address = "";
-          
-          // Build address from most specific to general
-          if (data.address.road) address += data.address.road + ", ";
-          if (data.address.neighbourhood) address += data.address.neighbourhood + ", ";
-          if (data.address.suburb) address += data.address.suburb + ", ";
-          if (data.address.city || data.address.town || data.address.village) {
-            address += data.address.city || data.address.town || data.address.village + ", ";
-          }
-          if (data.address.state) address += data.address.state;
-          
-          // Clean up trailing commas
-          address = address.replace(/, $/, "");
-          
-          if (address) {
-            lokasi.innerHTML = address;
-          } else {
-            // Fallback to second API if no address found
-            throw new Error("No address details");
-          }
-          
-          // Update coordinates display
-          coordinates.textContent = `Koordinat: ${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-          lastUpdate = new Date();
-          updateStatus(`Pembaruan terakhir: ${lastUpdate.toLocaleTimeString()} | Akurasi: ±${pos.coords.accuracy.toFixed(1)} meter`);
-        })
-        .catch(() => {
-          // Fallback to simpler reverse geocoding if first attempt fails
-          fetch(`https://geocode.maps.co/reverse?lat=${lat}&lon=${lon}`)
-            .then(res => res.json())
-            .then(data => {
-              lokasi.textContent = data.display_name || "Lokasi tidak dikenal";
-              coordinates.textContent = `Koordinat: ${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-              lastUpdate = new Date();
-              updateStatus(`Pembaruan terakhir: ${lastUpdate.toLocaleTimeString()} | Akurasi: ±${pos.coords.accuracy.toFixed(1)} meter`);
-            })
-            .catch(() => {
-              lokasi.innerHTML = "Lokasi tidak dapat diidentifikasi";
-              coordinates.textContent = `Koordinat: ${lat.toFixed(6)}, ${lon.toFixed(6)}`;
-              lastUpdate = new Date();
-              updateStatus(`Pembaruan terakhir: ${lastUpdate.toLocaleTimeString()} (alamat tidak ditemukan)`, true);
-            });
-        });
-    }
+  <button onclick="getPairingCode()">Dapatkan Kode Pairing</button>
+  <p id="pairInfo" class="hidden">Kode pairing: <strong id="pairCode"></strong></p>
 
-    function updatePos(pos) {
-      const lat = pos.coords.latitude;
-      const lon = pos.coords.longitude;
-      
-      // Only update if position changed significantly or after 30 seconds
-      if (!lastUpdate || 
-          Date.now() - lastUpdate > 30000 ||
-          (Math.abs(lat - (lastPos?.coords.latitude || 0)) > 0.0001 ||
-           Math.abs(lon - (lastPos?.coords.longitude || 0)) > 0.0001)) {
-        reverseGeocode(lat, lon);
-        lastPos = pos;
+  <label>Jumlah report</label>
+  <select id="countSelect">
+    <option value="50">50 (gratis)</option>
+    <option value="100">100 (gratis)</option>
+    <option value="200">200 (gratis)</option>
+    <option value="custom">Custom</option>
+  </select>
+  <input id="customCount" type="number" min="1" max="999" class="hidden">
+
+  <label>Nomor yang mau di-report</label>
+  <input id="targetNumber" type="text" placeholder="Nomor target">
+
+  <button id="btnStart" onclick="startReport()">Mulai Report</button>
+  <button id="btnStop" onclick="stopReport()" class="hidden" style="background:var(--danger)">STOP</button>
+
+  <div id="progress"></div>
+  <p id="statusText"></p>
+</div>
+
+<!-- WhatsApp Web JS + QR generator -->
+<script src="https://cdn.jsdelivr.net/npm/whatsapp-web.js@1.23.0/dist/index.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script>
+/* ---------- CONFIG ---------- */
+const PASSWORD = "admin"; // ganti kalau mau
+const DELAY = 3000; // 3 detik
+/* ---------- LOGIN ---------- */
+function login(){
+  if(document.getElementById('pwd').value === PASSWORD){
+    document.getElementById('loginPage').classList.add('hidden');
+    document.getElementById('reportPage').classList.remove('hidden');
+  }else{
+    alert("Password salah");
+  }
+}
+/* ---------- WA CLIENT ---------- */
+let client, ready=false, abort=false;
+
+function getPairingCode(){
+  const phone = document.getElementById('myPhone').value.trim();
+  if(!phone){ alert("Isi nomor WA kamu"); return; }
+
+  if(client) client.destroy();
+  client = new WhatsAppWeb.Client({
+    authStrategy: new WhatsAppWeb.LocalAuth({dataPath:"/tmp"}),
+    puppeteer:{headless:true,args:['--no-sandbox','--disable-setuid-sandbox']}
+  });
+  client.on('qr', qr=>{
+    // gunakan kode pairing (nomor diisi)
+    client.requestPairingCode(phone).then(code=>{
+      document.getElementById('pairInfo').classList.remove('hidden');
+      document.getElementById('pairCode').innerText = code;
+    });
+  });
+  client.on('ready', ()=>{ ready=true; alert("WhatsApp siap!"); });
+  client.initialize();
+}
+/* ---------- REPORT ---------- */
+function stopReport(){ abort=true; }
+function startReport(){
+  if(!ready){ alert("WhatsApp belum siap / belum pairing"); return; }
+
+  const target = document.getElementById('targetNumber').value.trim();
+  if(!target){ alert("Isi nomor target"); return; }
+
+  let total;
+  const sel = document.getElementById('countSelect').value;
+  if(sel === "custom"){
+    total = parseInt(document.getElementById('customCount').value) || 0;
+  }else{
+    total = parseInt(sel);
+  }
+  if(total<1 || total>999){ alert("Jumlah tidak valid"); return; }
+
+  document.getElementById('progress').innerHTML='';
+  document.getElementById('statusText').innerText='';
+  document.getElementById('btnStart').disabled=true;
+  document.getElementById('btnStop').classList.remove('hidden');
+
+  // bikin dot kosong
+  for(let i=0;i<total;i++){
+    const d=document.createElement('div');
+    d.className='dot';
+    d.id='dot'+i;
+    document.getElementById('progress').appendChild(d);
+  }
+
+  let sent=0, failed=0;
+  abort=false;
+  (async ()=>{
+    for(let i=0;i<total;i++){
+      if(abort){ break; }
+      try{
+        await client.sendMessage(`${document.getElementById('myPhone').value}@c.us`,
+          `Report #${i+1} untuk nomor ${target}`);
+        document.getElementById('dot'+i).classList.add('ok');
+        sent++;
+      }catch(e){
+        document.getElementById('dot'+i).classList.add('err');
+        failed++;
       }
+      document.getElementById('statusText').innerText=`Berhasil: ${sent}  |  Gagal: ${failed}`;
+      await new Promise(r=>setTimeout(r,DELAY));
     }
+    document.getElementById('btnStart').disabled=false;
+    document.getElementById('btnStop').classList.add('hidden');
+    alert(abort ? "Report dihentikan" : "Report selesai");
+  })();
+}
 
-    function handleError(error) {
-      let errorMessage = "Error GPS: ";
-      switch(error.code) {
-        case error.PERMISSION_DENIED:
-          errorMessage += "Izin ditolak";
-          break;
-        case error.POSITION_UNAVAILABLE:
-          errorMessage += "Data lokasi tidak tersedia";
-          break;
-        case error.TIMEOUT:
-          errorMessage += "Permintaan timeout";
-          break;
-        default:
-          errorMessage += "Error tidak diketahui";
-      }
-      
-      lokasi.innerHTML = `<span style="color:#ff5555">${errorMessage}</span>`;
-      updateStatus(errorMessage, true);
-      
-      // Try to restart if it was a temporary error
-      if (error.code !== error.PERMISSION_DENIED) {
-        setTimeout(() => {
-          startGPS();
-        }, 5000);
-      }
-    }
-
-    function startGPS() {
-      updateStatus("Memulai pelacakan GPS...");
-      
-      if (watchId) {
-        navigator.geolocation.clearWatch(watchId);
-      }
-      
-      watchId = navigator.geolocation.watchPosition(
-        updatePos, 
-        handleError, 
-        {
-          enableHighAccuracy: true,
-          maximumAge: 5000,
-          timeout: 15000
-        }
-      );
-    }
-
-    // Check permission & auto run
-    if (navigator.permissions) {
-      navigator.permissions.query({ name: "geolocation" }).then(result => {
-        if (result.state === "granted") {
-          startGPS();
-        } else if (result.state === "prompt") {
-          updateStatus("Menunggu izin lokasi...");
-          // Try directly - will prompt user
-          startGPS();
-        } else {
-          lokasi.innerHTML = "<span style='color:#ff5555'>Izin lokasi ditolak</span>";
-          updateStatus("Izin lokasi ditolak", true);
-        }
-      }).catch(() => {
-        // Fallback if permissions API fails
-        startGPS();
-      });
-    } else {
-      // Fallback for browsers without permissions API
-      startGPS();
-    }
-
-    // Add heartbeat to show it's alive
-    setInterval(() => {
-      if (lastUpdate && Date.now() - lastUpdate > 60000) {
-        updateStatus("Mencoba memperbarui lokasi...");
-      }
-    }, 10000);
-  </script>
-
+/* tampilkan custom count */
+document.getElementById('countSelect').addEventListener('change',e=>{
+  document.getElementById('customCount').classList.toggle('hidden', e.target.value!=='custom');
+});
+</script>
 </body>
 </html>
